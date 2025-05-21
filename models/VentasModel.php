@@ -40,7 +40,7 @@ class VentasModel extends Query{
 
     public function getVentas()
     {
-        $sql = "SELECT v.*, c.nombre FROM ventas v INNER JOIN clientes c ON v.id_cliente = c.id";
+        $sql = "SELECT v.*, c.nombre FROM ventas v INNER JOIN clientes c ON v.id_cliente = c.id ORDER BY v.id DESC";
         return $this->selectAll($sql);
     }
 

@@ -30,7 +30,7 @@ class Compras extends Controller
     {
         $data['title'] = 'Compras';
         $data['script'] = 'compras.js';
-        $data['busqueda'] = 'busqueda.js';  
+        $data['busqueda'] = 'busqueda.js';
         $data['carrito'] = 'posCompra';
         $this->views->getView('compras', 'index', $data);
     }
@@ -74,7 +74,7 @@ class Compras extends Controller
                                 //actualizar stock
                                 $nuevaCantidad = $result['cantidad'] + $producto['cantidad'];
                                 $this->model->actualizarStock($nuevaCantidad, $result['id']);
-                                $movimiento = 'Compra N°: ' . $compra;
+                                $movimiento = 'Compra N°: ' . $compra . ' - ' . $metodo;
                                 $this->model->registrarMovimiento($movimiento, 'entrada', $producto['cantidad'], $nuevaCantidad, $producto['id'], $this->id_usuario);
                             }
                             $res = array('msg' => 'COMPRA GENERADA', 'type' => 'success', 'idCompra' => $compra);
@@ -97,6 +97,8 @@ class Compras extends Controller
                             //actualizar stock
                             $nuevaCantidad = $result['cantidad'] + $producto['cantidad'];
                             $this->model->actualizarStock($nuevaCantidad, $result['id']);
+                            $movimiento = 'Compra N°: ' . $compra . ' - ' . $metodo;
+                            $this->model->registrarMovimiento($movimiento, 'entrada', $producto['cantidad'], $nuevaCantidad, $producto['id'], $this->id_usuario);
                         }
                         $res = array('msg' => 'COMPRA GENERADA', 'type' => 'success', 'idCompra' => $compra);
                     } else {

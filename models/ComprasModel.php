@@ -41,7 +41,7 @@ class ComprasModel extends Query{
 
     public function getCompras()
     {
-        $sql = "SELECT c.*, p.nombre FROM compras c INNER JOIN proveedor p ON c.id_proveedor = p.id ORDER BY id DESC";
+        $sql = "SELECT c.*, p.nombre FROM compras c INNER JOIN proveedor p ON c.id_proveedor = p.id ORDER BY c.id DESC";
         return $this->selectAll($sql);
     }
 

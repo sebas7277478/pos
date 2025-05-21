@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function(){
         dom,
         buttons,
         responsive: true,
-        order: [[5, 'desc']],
+        order: [[0, 'desc']],
     });
 
     //autocomplete clientes

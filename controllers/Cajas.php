@@ -167,7 +167,7 @@ class Cajas extends Controller
         $data['title'] = 'Reporte Actual';
         $data['actual'] = true;
         $data['empresa'] = $this->model->getEmpresa();
-        $data['movimientos'] = $this->model->getDatos();
+        $data['movimientos'] = $this->getDatos();
         $this->views->getView('cajas', 'reporte', $data);
         $html = ob_get_clean();
         $dompdf = new Dompdf();

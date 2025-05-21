@@ -1,6 +1,8 @@
 <?php
-class AdminModel extends Query{
-    public function __construct() {
+class AdminModel extends Query
+{
+    public function __construct()
+    {
         parent::__construct();
     }
     public function getDatos()
@@ -8,13 +10,28 @@ class AdminModel extends Query{
         $sql = "SELECT * FROM configuracion";
         return $this->select($sql);
     }
-    public function actualizar($ruc, $nombre, $telefono, $correo,
-    $direccion, $impuesto, $mensaje, $id)
-    {
+    public function actualizar(
+        $ruc,
+        $nombre,
+        $telefono,
+        $correo,
+        $direccion,
+        $impuesto,
+        $mensaje,
+        $id
+    ) {
         $sql = "UPDATE configuracion SET ruc=?, nombre=?, telefono=?, correo=?,
         direccion=?, impuesto=?, mensaje=? WHERE id=?";
-        $array = array($ruc, $nombre, $telefono, $correo,
-        $direccion, $impuesto, $mensaje, $id);
+        $array = array(
+            $ruc,
+            $nombre,
+            $telefono,
+            $correo,
+            $direccion,
+            $impuesto,
+            $mensaje,
+            $id
+        );
         return $this->save($sql, $array);
     }
 
@@ -117,7 +134,9 @@ class AdminModel extends Query{
     }
     public function totalCreditos()
     {
-        $sql = "SELECT SUM(monto) AS total FROM creditos WHERE estado = 1";
+        $sql = "SELECT( 
+                    (SELECT IFNULL(SUM(monto), 0) FROM creditos) - (SELECT IFNULL(SUM(abono), 0) FROM abonos) 
+                ) AS total";
         return $this->select($sql);
     }
 }

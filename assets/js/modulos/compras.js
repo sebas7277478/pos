@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function () {
         dom,
         buttons,
         responsive: true,
-        order: [[1, 'desc']],
+        order: [[0, 'desc']],
     });
 
     //levantar modal pagos
