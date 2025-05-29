@@ -204,7 +204,7 @@ class Ventas extends Controller
     {
         $empresa = $this->model->getEmpresa();
         $venta = $this->model->getVenta($idVenta);
-        $nombre_impresora = "POS58 Printer";
+        $nombre_impresora = "4BARCODE3B-365B";
         $connector = new WindowsPrintConnector($nombre_impresora);
         $printer = new Printer($connector);
 
