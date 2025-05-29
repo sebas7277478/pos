@@ -39,13 +39,6 @@ CREATE TABLE IF NOT EXISTS `abonos` (
   KEY `id_credito` (`id_credito`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `abonos`
---
-
-INSERT INTO `abonos` (`id`, `abono`, `fecha`, `apertura`, `id_credito`, `id_usuario`) VALUES
-(1, 11200.00, '2025-05-20 23:16:33', 0, 1, 1),
-(2, 20000.00, '2025-05-20 23:16:33', 0, 1, 1);
 
 -- --------------------------------------------------------
 
@@ -64,13 +57,6 @@ CREATE TABLE IF NOT EXISTS `abonos_compras` (
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `abonos_compras`
---
-
-INSERT INTO `abonos_compras` (`id`, `abono`, `fecha`, `id_credito_compra`, `apertura`, `id_usuario`) VALUES
-(1, 5000.00, '2025-05-20', 1, 0, 1);
-
 -- --------------------------------------------------------
 
 --
@@ -86,36 +72,6 @@ CREATE TABLE IF NOT EXISTS `acceso` (
   `fecha` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `acceso`
---
-
-INSERT INTO `acceso` (`id`, `evento`, `ip`, `detalle`, `fecha`) VALUES
-(1, 'Inicio de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36', '2025-02-14 00:30:07'),
-(2, 'Inicio de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36', '2025-02-14 00:30:10'),
-(3, 'Inicio de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36', '2025-02-14 00:32:23'),
-(4, 'Inicio de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36', '2025-02-14 00:32:40'),
-(5, 'Cierre de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36', '2025-02-14 01:31:12'),
-(6, 'Inicio de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36', '2025-02-14 01:31:33'),
-(7, 'Cierre de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36', '2025-02-14 22:42:47'),
-(8, 'Inicio de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36', '2025-02-14 22:43:09'),
-(9, 'Inicio de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36', '2025-03-13 02:22:29'),
-(10, 'Inicio de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36', '2025-03-20 16:12:40'),
-(11, 'Inicio de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36', '2025-05-20 19:32:35'),
-(12, 'Cierre de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36', '2025-05-20 19:32:52'),
-(13, 'Inicio de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36', '2025-05-20 19:36:50'),
-(14, 'Inicio de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36', '2025-05-20 19:48:58'),
-(15, 'Cierre de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36', '2025-05-20 22:18:38'),
-(16, 'Inicio de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36', '2025-05-20 22:18:58'),
-(17, 'Cierre de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36', '2025-05-20 22:19:33'),
-(18, 'Inicio de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36', '2025-05-20 22:23:23'),
-(19, 'Cierre de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36', '2025-05-20 23:15:52'),
-(20, 'Inicio de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36', '2025-05-20 23:16:12'),
-(21, 'Cierre de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36', '2025-05-20 23:16:37'),
-(22, 'Inicio de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36', '2025-05-20 23:16:55'),
-(23, 'Cierre de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36', '2025-05-20 23:22:16'),
-(24, 'Inicio de Sesión', '::1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36', '2025-05-20 23:49:30');
 
 -- --------------------------------------------------------
 
@@ -162,14 +118,6 @@ CREATE TABLE IF NOT EXISTS `cajas` (
   KEY `id_usuario` (`id_usuario`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `cajas`
---
-
-INSERT INTO `cajas` (`id`, `monto_inicial`, `fecha_apertura`, `fecha_cierre`, `monto_final`, `total_ventas`, `egresos`, `gastos`, `estado`, `id_usuario`) VALUES
-(1, 100000.00, '2025-05-20', '2025-05-20', 151200.00, 4, 25000.00, 0.00, 0, 1),
-(2, 100000.00, '2025-05-20', '2025-05-20', 7200.00, 2, 0.00, 0.00, 0, 5),
-(3, 50000.00, '2025-05-20', NULL, NULL, NULL, NULL, NULL, 1, 5);
 
 -- --------------------------------------------------------
 
@@ -186,12 +134,6 @@ CREATE TABLE IF NOT EXISTS `categorias` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `categorias`
---
-
-INSERT INTO `categorias` (`id`, `categoria`, `fecha`, `estado`) VALUES
-(1, 'alimentos', '2025-02-14 02:04:05', 1);
 
 -- --------------------------------------------------------
 
@@ -218,10 +160,7 @@ CREATE TABLE IF NOT EXISTS `clientes` (
 --
 
 INSERT INTO `clientes` (`id`, `identidad`, `num_identidad`, `nombre`, `telefono`, `correo`, `direccion`, `fecha`, `estado`) VALUES
-(1, 'CC', '12054897', 'Jose Luis', '8954874', NULL, 'san juan', '2025-02-27 18:46:38', 1),
-(2, 'CC', '4587125', 'Juan Perez', '32654879', NULL, 'santo domingo', '2025-02-27 18:44:13', 1),
-(3, 'CC', '1025487985', 'JORGE', '2352221351351', 'sebastianhdg74@gmail.com', '<p>SAN PEDRO</p>', '2025-05-20 23:20:49', 1),
-(4, 'CC', '58974989', 'juan', '89745521', NULL, '<p>cali</p>', '2025-02-27 20:26:08', 1);
+(1, 'CC', '2222222222', 'cliente final', '222222222', NULL, 'cliente final', '2025-02-27 18:46:38', 1);
 
 -- --------------------------------------------------------
 
@@ -247,14 +186,6 @@ CREATE TABLE IF NOT EXISTS `compras` (
   KEY `id_usuario` (`id_usuario`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `compras`
---
-
-INSERT INTO `compras` (`id`, `productos`, `total`, `fecha`, `hora`, `metodo`, `serie`, `estado`, `apertura`, `id_proveedor`, `id_usuario`) VALUES
-(1, '[{\"id\":1,\"nombre\":\"arroz\",\"precio\":\"20000.00\",\"cantidad\":1}]', 20000.00, '2025-05-20', '16:43:34', 'CONTADO', '00124578', 1, 0, 1, 1),
-(2, '[{\"id\":5,\"nombre\":\"papas\",\"precio\":\"500.00\",\"cantidad\":\"10\"}]', 5000.00, '2025-05-20', '16:44:52', 'CREDITO', '00004589', 1, 0, 1, 1);
-
 -- --------------------------------------------------------
 
 --
@@ -279,7 +210,7 @@ CREATE TABLE IF NOT EXISTS `configuracion` (
 --
 
 INSERT INTO `configuracion` (`id`, `ruc`, `nombre`, `telefono`, `correo`, `direccion`, `mensaje`, `impuesto`) VALUES
-(1, '23999999999', 'EASY CONTA', '900897537', 'sebastianhdg74@gmail.com', 'COLOMBIA', '<p>GRACIAS POR SU PREFERENCIA</p>', 0);
+(1, '23999999999', 'EASY CONTA', '900897537', 'sebas@gmail.com', 'COLOMBIA', '<p>GRACIAS POR SU PREFERENCIA</p>', 0);
 
 -- --------------------------------------------------------
 
@@ -320,13 +251,6 @@ CREATE TABLE IF NOT EXISTS `creditos` (
   KEY `id_venta` (`id_venta`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `creditos`
---
-
-INSERT INTO `creditos` (`id`, `monto`, `fecha`, `hora`, `estado`, `id_venta`) VALUES
-(1, 31200.00, '2025-05-20', '16:57:47', 0, 2);
-
 -- --------------------------------------------------------
 
 --
@@ -345,13 +269,6 @@ CREATE TABLE IF NOT EXISTS `creditos_compras` (
   `id_compra` int NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `creditos_compras`
---
-
-INSERT INTO `creditos_compras` (`id`, `monto`, `fecha`, `hora`, `estado_credito`, `idproveedor`, `id_usuario`, `id_compra`) VALUES
-(1, 5000, '2025-05-20', '16:44:52', 0, 1, 1, 2);
 
 -- --------------------------------------------------------
 
@@ -409,23 +326,6 @@ CREATE TABLE IF NOT EXISTS `inventario` (
   KEY `id_producto` (`id_producto`),
   KEY `id_usuario` (`id_usuario`)
 ) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `inventario`
---
-
-INSERT INTO `inventario` (`id`, `movimiento`, `accion`, `cantidad`, `stock_actual`, `fecha`, `id_producto`, `id_usuario`) VALUES
-(1, 'Venta N°: 1', 'salida', 1, 8, '2025-05-20 21:42:19', 1, 1),
-(2, 'Compra N°: 1 - CONTADO', 'entrada', 1, 9, '2025-05-20 21:43:34', 1, 1),
-(3, 'Compra N°: 2 - CREDITO', 'entrada', 10, 20, '2025-05-20 21:44:52', 5, 1),
-(4, 'Venta N°: 2', 'salida', 1, 19, '2025-05-20 21:57:47', 5, 1),
-(5, 'Venta N°: 2', 'salida', 1, 8, '2025-05-20 21:57:47', 1, 1),
-(6, 'Venta N°: 3', 'salida', 2, 6, '2025-05-20 22:27:18', 1, 1),
-(7, 'Venta N°: 4', 'salida', 1, 5, '2025-05-20 23:15:35', 1, 1),
-(8, 'Venta N°: 5', 'salida', 3, 16, '2025-05-20 23:17:48', 5, 5),
-(9, 'Venta N°: 6', 'salida', 3, 13, '2025-05-20 23:21:32', 5, 5),
-(10, 'Venta N°: 7', 'salida', 1, 4, '2025-05-20 23:50:08', 1, 5);
-
 -- --------------------------------------------------------
 
 --
@@ -441,13 +341,6 @@ CREATE TABLE IF NOT EXISTS `medidas` (
   `estado` int NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `medidas`
---
-
-INSERT INTO `medidas` (`id`, `medida`, `nombre_corto`, `fecha`, `estado`) VALUES
-(1, 'kilogramos', 'k', '2025-02-14 02:03:55', 1);
 
 -- --------------------------------------------------------
 
@@ -510,16 +403,6 @@ CREATE TABLE IF NOT EXISTS `productos` (
   KEY `id_medida` (`id_medida`)
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `productos`
---
-
-INSERT INTO `productos` (`id`, `codigo`, `descripcion`, `precio_compra`, `precio_venta`, `vencimiento`, `cantidad`, `foto`, `estado`, `fecha`, `ventas`, `id_medida`, `id_categoria`) VALUES
-(1, '5631165', 'arroz', 20000.00, 30000.00, '0000-00-00', 4, NULL, 1, '2025-05-20 23:50:08', 29, 1, 1),
-(2, '5688747', 'azucar', 16000.00, 21000.00, '0000-00-00', 4, NULL, 1, '2025-02-27 23:24:30', 12, 1, 1),
-(3, '4587412', 'leche', 6000.00, 11000.00, '2025-03-26', 7, NULL, 1, '2025-05-20 19:43:29', 8, 1, 1),
-(4, '751273778478', 'nuevo', 5000.00, 10000.00, '0000-00-00', 5, NULL, 1, '2025-02-27 22:25:35', 0, 1, 1),
-(5, '5689742', 'papas', 500.00, 1200.00, '2025-06-10', 13, NULL, 1, '2025-05-20 23:21:32', 8, 1, 1);
 
 -- --------------------------------------------------------
 
@@ -540,12 +423,6 @@ CREATE TABLE IF NOT EXISTS `proveedor` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `proveedor`
---
-
-INSERT INTO `proveedor` (`id`, `ruc`, `nombre`, `telefono`, `correo`, `direccion`, `fecha`, `estado`) VALUES
-(1, '5648759', 'DistriHogar', '89745621', 'distrihogar@gmail.com', '<p>pasto</p>', '2025-02-14 02:06:11', 1);
 
 -- --------------------------------------------------------
 
@@ -600,11 +477,7 @@ CREATE TABLE IF NOT EXISTS `usuarios` (
 --
 
 INSERT INTO `usuarios` (`id`, `nombre`, `apellido`, `correo`, `telefono`, `direccion`, `perfil`, `clave`, `token`, `fecha`, `estado`, `rol`) VALUES
-(1, 'ANGEL', 'SIFUENTES', 'lovenaju2@gmail.com', '900897537', 'LIMA PERU', NULL, '$2y$10$PBVfztrP.ynI6stFCV3vtOtF9asUF4yIfUjTQ5aXhE1xZEzb0DH3a', NULL, '2022-09-20 19:46:47', 1, 1),
-(2, 'SEGUNDO', 'USUARIO', 'segundousers@gmail.com', '79898987', 'PERU', NULL, '$2y$10$iEqpvM8zHShRgJPKwgkIeeO1MqG6b6Ka2Y7vhJtOXe4KShEv3pN8i', NULL, '2023-06-04 01:03:03', 0, 1),
-(3, 'NUEVO', 'USUARIO', 'vendedor@gmail.com', '98699777', 'peru', NULL, '$2y$10$/k36L9B9SxvaX95g.LBf5.WEBQ4.zrZjBTyIyHBodVt9Ucl5LnmwS', NULL, '2025-02-11 02:10:34', 0, 2),
-(4, 'jose', 'perez', 'jose@gmail.com', '1234566789', 'san juan', NULL, '$2y$10$EpMOwiZKkY306p4Zp1QqKerrsdQXG3sg0tTYvu1EuiifHd/p3fGnq', NULL, '2025-02-11 02:11:20', 1, 3),
-(5, 'Sebastian', 'Delgado', 'sebastianhsdg@gmail.com', '3233915398', 'la laguna', NULL, '$2y$10$6R5C5058.BYVp.JUhmJceuhi4nfkWyiOaToEUuR2RyfulkTai.zaq', NULL, '2025-05-20 22:17:35', 1, 1);
+(1, 'Sebastian', 'Delgado', 'sebastianhsdg@gmail.com', '3233915398', 'la laguna', NULL, '$2y$10$6R5C5058.BYVp.JUhmJceuhi4nfkWyiOaToEUuR2RyfulkTai.zaq', NULL, '2025-05-20 22:17:35', 1, 1);
 
 -- --------------------------------------------------------
 
@@ -631,19 +504,6 @@ CREATE TABLE IF NOT EXISTS `ventas` (
   KEY `id_cliente` (`id_cliente`),
   KEY `id_usuario` (`id_usuario`)
 ) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `ventas`
---
-
-INSERT INTO `ventas` (`id`, `productos`, `total`, `fecha`, `hora`, `metodo`, `descuento`, `serie`, `pago`, `estado`, `apertura`, `id_cliente`, `id_usuario`) VALUES
-(1, '[{\"id\":1,\"nombre\":\"arroz\",\"precio\":\"30000.00\",\"cantidad\":1}]', 30000.00, '2025-05-20', '16:42:19', 'CONTADO', 0.00, '00000001', 50000.00, 1, 0, 1, 1),
-(2, '[{\"id\":5,\"nombre\":\"papas\",\"precio\":\"1200.00\",\"cantidad\":1},{\"id\":1,\"nombre\":\"arroz\",\"precio\":\"30000.00\",\"cantidad\":1}]', 31200.00, '2025-05-20', '16:57:47', 'CREDITO', 0.00, '00000002', 31200.00, 1, 0, 3, 1),
-(3, '[{\"id\":1,\"nombre\":\"arroz\",\"precio\":\"30000.00\",\"cantidad\":\"2\"}]', 60000.00, '2025-05-20', '17:27:18', 'CONTADO', 0.00, '00000003', 70000.00, 1, 0, 3, 1),
-(4, '[{\"id\":1,\"nombre\":\"arroz\",\"precio\":\"30000.00\",\"cantidad\":1}]', 30000.00, '2025-05-20', '18:15:35', 'CONTADO', 0.00, '00000004', 30000.00, 1, 0, 3, 1),
-(5, '[{\"id\":5,\"nombre\":\"papas\",\"precio\":\"1200.00\",\"cantidad\":\"3\"}]', 3600.00, '2025-05-20', '18:17:48', 'CONTADO', 0.00, '00000005', 3600.00, 1, 0, 3, 5),
-(6, '[{\"id\":5,\"nombre\":\"papas\",\"precio\":\"1200.00\",\"cantidad\":\"3\"}]', 3600.00, '2025-05-20', '18:21:32', 'CONTADO', 0.00, '00000006', 3600.00, 1, 0, 3, 5),
-(7, '[{\"id\":1,\"nombre\":\"arroz\",\"precio\":\"30000.00\",\"cantidad\":1}]', 30000.00, '2025-05-20', '18:50:08', 'CONTADO', 0.00, '00000007', 30000.00, 1, 1, 3, 5);
 
 --
 -- Restricciones para tablas volcadas
