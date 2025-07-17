@@ -1,0 +1,4 @@
+Importante: 
+1.- Activar la extesión GD en PHP:INI para los reportes PDF.
+2.- Configurar y Agregar Nombre de la Impresora en el metodo impresion_directa
+5.- Es muy importante limpiar tu localStorage si anteriormente agregaste otros productos al carrito.
