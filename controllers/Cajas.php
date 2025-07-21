@@ -12,7 +12,7 @@ class Cajas extends Controller
             header('Location: ' . BASE_URL);
             exit;
         }
-        if (!verificar('cajas')){
+        if (!verificar('cajas')) {
             header('Location: ' . BASE_URL . 'admin/permisos');
             exit;
         }
@@ -53,8 +53,8 @@ class Cajas extends Controller
     public function listar()
     {
         $data = $this->model->getCajas();
-        for ($i=0; $i < count($data); $i++) { 
-            $data[$i]['accion'] = '<a href="'.BASE_URL.'cajas/historialRepote/'.$data[$i]['id'].'" target="_blank" class="btn btn-danger"><i class="fas fa-file-pdf"></i></a>';
+        for ($i = 0; $i < count($data); $i++) {
+            $data[$i]['accion'] = '<a href="' . BASE_URL . 'cajas/historialRepote/' . $data[$i]['id'] . '" target="_blank" class="btn btn-danger"><i class="fas fa-file-pdf"></i></a>';
         }
         echo json_encode($data);
         die();
@@ -122,43 +122,34 @@ class Cajas extends Controller
 
     public function getDatos()
     {
-        $consultaVenta = $this->model->getVentas('total', $this->id_usuario);
-        $ventas = ($consultaVenta['total'] != null) ? $consultaVenta['total'] : 0;
+        $ventas = (float) $this->model->getVentas('total', $this->id_usuario)['total'] ?? 0;
+        $descuento = (float) $this->model->getVentas('descuento', $this->id_usuario)['total'] ?? 0;
+        $apartados = (float) $this->model->getApartados($this->id_usuario)['total'] ?? 0;
+        $creditos = (float) $this->model->getAbonos($this->id_usuario)['total'] ?? 0;
+        $creditosCompras = (float) $this->model->getAbonosCompras($this->id_usuario)['total'] ?? 0;
+        $compras = (float) $this->model->getCompras($this->id_usuario)['total'] ?? 0;
+        $gastos = (float) $this->model->getTotalGastos($this->id_usuario)['total'] ?? 0;
 
-        $consultaDescuento = $this->model->getVentas('descuento', $this->id_usuario);
-        $descuento = ($consultaDescuento['total'] != null) ? $consultaDescuento['total'] : 0;
+        $montoInicial = (float) ($this->model->getCaja($this->id_usuario)['monto_inicial'] ?? 0);
 
-        $consultaApartados = $this->model->getApartados($this->id_usuario);
-        $apartados = ($consultaApartados['total'] != null) ? $consultaApartados['total'] : 0;
+        $egresos = $compras + $gastos + $creditosCompras;
+        $ingresos = ($ventas + $apartados + $creditos) - $descuento;
+        $saldo = ($ingresos + $montoInicial) - $egresos;
 
-        $consultaCreditos = $this->model->getAbonos($this->id_usuario);
-        $creditos = ($consultaCreditos['total'] != null) ? $consultaCreditos['total'] : 0;
+        return [
+            'egresos' => $egresos,
+            'ingresos' => $ingresos,
+            'montoInicial' => $montoInicial,
+            'gastos' => $gastos,
+            'saldo' => $saldo,
 
-        //agregar a egresos los pagos de facturas de compras
-        $consultaCreditosComp = $this->model->getAbonosCompras($this->id_usuario);
-        $creditosCompras = ($consultaCreditosComp['total'] != null) ? $consultaCreditosComp['total'] : 0;
-
-        $consultaCompras = $this->model->getCompras($this->id_usuario);
-        $compras = ($consultaCompras['total'] != null) ? $consultaCompras['total'] : 0;
-
-        $consultaGastos = $this->model->getTotalGastos($this->id_usuario);
-        $gastos = ($consultaGastos['total'] != null) ? $consultaGastos['total'] : 0;
-
-        $montoInicial = $this->model->getCaja($this->id_usuario);
-
-        $data['egresos'] = number_format($compras + $gastos + $creditosCompras, 2, '.', '');
-        $data['ingresos'] = number_format(($ventas + $apartados + $creditos) - $descuento, 2, '.', '');
-        $data['montoInicial'] = (!empty($montoInicial['monto_inicial'])) ? number_format($montoInicial['monto_inicial'], 2, '.', '') : 0;
-        $data['gastos'] = number_format($gastos, 2, '.', '');
-        $data['saldo'] = number_format(($data['ingresos'] + $data['montoInicial']) - $data['egresos'], 2, '.', '');
-
-        $data['egresosDecimal'] = number_format($data['egresos'], 2);
-        $data['ingresosDecimal'] = number_format($data['ingresos'], 2);
-        $data['inicialDecimal'] = number_format($data['montoInicial'], 2);
-        $data['gastosDecimal'] = number_format($data['gastos'], 2);
-        $data['saldoDecimal'] = number_format($data['saldo'], 2);
-
-        return $data;
+            // Formateados solo para mostrar
+            'egresosDecimal' => number_format($egresos, 2),
+            'ingresosDecimal' => number_format($ingresos, 2),
+            'inicialDecimal' => number_format($montoInicial, 2),
+            'gastosDecimal' => number_format($gastos, 2),
+            'saldoDecimal' => number_format($saldo, 2),
+        ];
     }
     public function reporte()
     {
@@ -204,7 +195,7 @@ class Cajas extends Controller
             $this->model->actualizarApertura('abonos_compras', $this->id_usuario);
             $this->model->actualizarApertura('detalle_apartado', $this->id_usuario);
             $res = array('msg' => 'CAJA CERRADO', 'type' => 'success');
-        }else{
+        } else {
             $res = array('msg' => 'ERROR AL CERRAR LA CAJA', 'type' => 'error');
         }
         echo json_encode($res);

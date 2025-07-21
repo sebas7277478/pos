@@ -33,7 +33,6 @@ document.addEventListener('DOMContentLoaded', function () {
             { data: 'abonado' },
             { data: 'venta' },
             { data: 'estado' },
-            { data: 'acciones' },
         ],
         language: {
             url: base_url + 'assets/js/espanol.json'
@@ -122,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         monto_abonar.value = '';
                         setTimeout(() => {
                             const ruta = base_url + 'creditos/reporte/' + idCredito.value;
-                            //window.open(ruta, '_blank');
+                            window.open(ruta, '_blank');
                         }, 1000);
                     }
                 }

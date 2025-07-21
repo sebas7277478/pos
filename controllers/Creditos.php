@@ -157,7 +157,8 @@ class Creditos extends Controller
                 }
             }
 
-            echo json_encode(['msg' => 'ABONO DISTRIBUIDO', 'type' => 'success']);            
+            echo json_encode(['msg' => 'ABONO DISTRIBUIDO', 'type' => 'success']); ;
+            $this->impresionDirecta($idCliente);
         } else {
             echo json_encode(['msg' => 'DATOS INSUFICIENTES', 'type' => 'error']);
         }
@@ -166,6 +167,7 @@ class Creditos extends Controller
     public function impresionDirecta($idCliente)
     {
         $empresa = $this->model->getEmpresa();
+        $cliente = $this->model->getCliente($idCliente);
         $deuda = $this->model->getDeudaTotalCliente($idCliente);
         $nombre_impresora = "4BARCODE 3B-365B";
         $connector = new WindowsPrintConnector($nombre_impresora);
@@ -182,6 +184,14 @@ class Creditos extends Controller
         $printer->text(date("Y-m-d H:i:s") . "\n\n");
 
         #Datos del cliente
+        $printer->text('Datos del Cliente' . "\n");
+        $printer->text('--------------------' . "\n");
+        /*Alinear a la izquierda para la cantidad y el nombre*/
+        $printer->setJustification(Printer::JUSTIFY_LEFT);
+        $printer->text($cliente['identidad'] . ': ' . $cliente['num_identidad'] . "\n\n");
+
+        $printer->text('--------------------' . "\n");
+
         $printer->text('Deuda restante' . "\n");
         $printer->text('--------------------' . "\n");
         /*Alinear a la izquierda para la cantidad y el nombre*/

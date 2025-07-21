@@ -44,7 +44,7 @@
                                 <th>Abonado</th>
                                 <th>N° Venta</th>
                                 <th>Estado</th>
-                                <th></th>
+                                
                             </tr>
                         </thead>
 

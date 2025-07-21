@@ -81,6 +81,12 @@ class CreditosModel extends Query
 
         return $total;
     }
+
+    public function getCliente($idCliente)
+    {
+        $sql = "SELECT cl.* FROM clientes cl WHERE cl.id = $idCliente";
+        return $this->selectAll($sql);
+    }
 }
 
 ?>
