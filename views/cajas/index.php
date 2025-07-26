@@ -60,7 +60,7 @@
                                     <th>Monto Inicial</th>
                                     <th>Fecha Apertura</th>
                                     <th>Fecha Cierre</th>
-                                    <th>Monto Final</th>
+                                    <th>Ingresos</th>
                                     <th>Total Ventas</th>
                                     <th>Usuario</th>
                                     <th></th>

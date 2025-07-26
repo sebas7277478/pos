@@ -154,6 +154,28 @@ class Ventas extends Controller
     {
         $data = $this->model->getVentas();
         for ($i = 0; $i < count($data); $i++) {
+
+            // Inicializar ganancia
+            $ganancia = 0;
+
+            // Decodificar los productos (asegúrate que se llama así el campo)
+            $productos = json_decode($data[$i]['productos'], true);
+
+            foreach ($productos as $prod) {
+                $idProducto = $prod['id'];
+                $precioVenta = $prod['precio'];
+                $cantidad = $prod['cantidad'];
+
+                // Obtener precio de compra del producto (puedes usar un modelo aparte o cargarlo previamente)
+                $producto = $this->model->getProductoGanancia($idProducto); // debes tener este método en tu modelo
+                $precioCompra = $producto['precio_compra'];
+
+                $ganancia += ($precioVenta - $precioCompra) * $cantidad;
+            }
+
+            // Agregar la ganancia al array que se enviará al front
+            $data[$i]['ganancia'] = number_format($ganancia, 2);
+
             if ($data[$i]['estado'] == 1) {
                 $data[$i]['acciones'] = '<div>
                 <a class="btn btn-warning" href="#" onclick="anularVenta(' . $data[$i]['id'] . ')"><i class="fas fa-trash"></i></a>

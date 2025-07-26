@@ -160,8 +160,9 @@
                                 <th>Hora</th>
                                 <th>Total</th>
                                 <th>Cliente</th>
-                                <th>Serie</th>
+                                <th>Serie</th>                                
                                 <th>Metodo</th>
+                                <th>Ganancia</th>
                                 <th></th>
                             </tr>
                         </thead>

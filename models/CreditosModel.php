@@ -49,7 +49,7 @@ class CreditosModel extends Query
 
     public function getHistorialAbonos()
     {
-        $sql = "SELECT * FROM abonos";
+        $sql = "SELECT a.*, cli.num_identidad FROM abonos a INNER JOIN creditos c ON a.id_credito = c.id INNER JOIN ventas v ON c.id_venta = v.id INNER JOIN clientes cli ON v.id_cliente = cli.id";
         return $this->selectAll($sql);
     }
 
@@ -85,7 +85,7 @@ class CreditosModel extends Query
     public function getCliente($idCliente)
     {
         $sql = "SELECT cl.* FROM clientes cl WHERE cl.id = $idCliente";
-        return $this->selectAll($sql);
+        return $this->select($sql);
     }
 }
 

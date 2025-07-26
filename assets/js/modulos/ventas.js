@@ -119,6 +119,7 @@ document.addEventListener('DOMContentLoaded', function () {
             { data: 'nombre' },
             { data: 'serie' },
             { data: 'metodo' },
+            { data: 'ganancia' },
             { data: 'acciones' }
         ],
         language: {

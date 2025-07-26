@@ -46,7 +46,7 @@ class Creditos extends Controller
             $data[$i]['abonado'] = number_format($abonado, 2);
             $data[$i]['restante'] = number_format($restante, 2);
             $data[$i]['venta'] = 'N°: ' . $data[$i]['id_venta'];
-            $data[$i]['acciones'] = '<a class="btn btn-danger" href="' . BASE_URL . 'creditos/reporte/' . $data[$i]['id'] . '" target="_blank"><i class="fas fa-file-pdf"></i></a>';
+            //$data[$i]['acciones'] = '<a class="btn btn-danger" href="' . BASE_URL . 'creditos/reporte/' . $data[$i]['id'] . '" target="_blank"><i class="fas fa-file-pdf"></i></a>';
             if ($data[$i]['estado'] == 1) {
                 $data[$i]['estado'] = '<span class="badge bg-warning">PENDIENTE</span>';
             } else if ($data[$i]['estado'] == 2) {
@@ -107,7 +107,6 @@ class Creditos extends Controller
 
     public function reporte($idCliente)
     {
-        ob_start();
         $this->impresionDirecta($idCliente);
     }
 

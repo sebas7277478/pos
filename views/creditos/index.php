@@ -63,6 +63,7 @@
                                 <th>Fecha</th>
                                 <th>Monto</th>
                                 <th>N° Credito</th>
+                                <th>N° Identidad</th>
                             </tr>
                         </thead>
 

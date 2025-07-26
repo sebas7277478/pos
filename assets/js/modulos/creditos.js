@@ -138,7 +138,8 @@ document.addEventListener('DOMContentLoaded', function () {
         columns: [
             { data: 'fecha' },
             { data: 'abono' },
-            { data: 'credito' }
+            { data: 'credito' },
+            { data: 'num_identidad' }
         ],
         language: {
             url: base_url + 'assets/js/espanol.json'

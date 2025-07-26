@@ -52,7 +52,7 @@ class CajasModel extends Query
     }
     public function getAbonos($id_usuario)
     {
-        $sql = "SELECT SUM(a.abono) AS total FROM abonos a INNER JOIN creditos c ON a.id_credito = c.id INNER JOIN ventas v ON c.id_venta = v.id WHERE a.apertura = 1 AND v.id_usuario = $id_usuario";
+        $sql = "SELECT SUM(a.abono) AS total FROM abonos a INNER JOIN creditos c ON a.id_credito = c.id INNER JOIN ventas v ON c.id_venta = v.id WHERE a.apertura = 1 AND a.id_usuario = $id_usuario";
         return $this->select($sql);
     }
     public function getAbonosCompras($id_usuario)

@@ -1,6 +1,8 @@
 <?php
-class VentasModel extends Query{
-    public function __construct() {
+class VentasModel extends Query
+{
+    public function __construct()
+    {
         parent::__construct();
     }
     public function getProducto($idProducto)
@@ -74,6 +76,11 @@ class VentasModel extends Query{
     public function getCaja($id_usuario)
     {
         $sql = "SELECT * FROM cajas WHERE estado = 1 AND id_usuario = $id_usuario";
+        return $this->select($sql);
+    }
+    public function getProductoGanancia($id)
+    {
+        $sql = "SELECT precio_compra FROM productos WHERE id = $id";
         return $this->select($sql);
     }
 }
