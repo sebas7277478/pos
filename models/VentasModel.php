@@ -83,6 +83,91 @@ class VentasModel extends Query
         $sql = "SELECT precio_compra FROM productos WHERE id = $id";
         return $this->select($sql);
     }
+
+    public function registrarVentaCompleta($productos, $total, $fecha, $hora, $metodo, $descuento, $serie, $pago, $idCliente, $idUsuario)
+    {
+        try {
+            $this->beginTransaction();
+
+            // 1. Registrar la venta
+            $jsonProductos = json_encode($productos);
+            $idVenta = $this->registrarVenta($jsonProductos, $total, $fecha, $hora, $metodo, $descuento, $serie, $pago, $idCliente, $idUsuario);
+            if ($idVenta <= 0) {
+                throw new Exception("Error al registrar la venta.");
+            }
+
+            // 2. Actualizar stock de cada producto
+            foreach ($productos as $producto) {
+                $result = $this->getProducto($producto['id']);
+                if (!$result)
+                    throw new Exception("Producto no encontrado: ID " . $producto['id']);
+
+                $nuevaCantidad = $result['cantidad'] - $producto['cantidad'];
+                if ($nuevaCantidad < 0)
+                    throw new Exception("Stock insuficiente para: " . $producto['nombre']);
+
+                $totalVentas = $result['ventas'] + $producto['cantidad'];
+                $this->actualizarStock($nuevaCantidad, $totalVentas, $producto['id']);
+
+                // 3. Registrar movimiento
+                $movimiento = 'Venta N°: ' . $idVenta;
+                $this->registrarMovimiento($movimiento, 'salida', $producto['cantidad'], $nuevaCantidad, $producto['id'], $idUsuario);
+            }
+
+            // 4. Si es crédito, registrar
+            if ($metodo == 'CREDITO') {
+                $montoCredito = $total - $descuento;
+                $this->registrarCredito($montoCredito, $fecha, $hora, $idVenta);
+            }
+
+            $this->commit();
+            return $idVenta;
+        } catch (Exception $e) {
+            $this->rollBack();
+            return 0;
+        }
+    }
+
+    public function anularVentaCompleta($idVenta)
+    {
+        // Comenzar transacción para evitar errores parciales
+        $this->beginTransaction();
+
+        try {
+            // 1. Anular la venta (estado = 0)
+            $sqlAnularVenta = "UPDATE ventas SET estado = 0 WHERE id = ?";
+            $this->save($sqlAnularVenta, [$idVenta]);
+
+            // 2. Obtener el crédito asociado a la venta
+            $sqlCredito = "SELECT id FROM creditos WHERE id_venta = ?";
+            $credito = $this->select($sqlCredito, [$idVenta]);
+
+            if ($credito) {
+                $idCredito = $credito['id'];
+
+                // 3. Eliminar abonos relacionados al crédito
+                $sqlEliminarAbonos = "DELETE FROM abonos WHERE id_credito = ?";
+                $this->save($sqlEliminarAbonos, [$idCredito]);
+
+                // 4. Anular el crédito (cambiar estado a 2)
+                $sqlAnularCredito = "UPDATE creditos SET estado = 2 WHERE id = ?";
+                $this->save($sqlAnularCredito, [$idCredito]);
+            }
+
+            // Confirmar cambios
+            $this->commit();
+
+            return true;
+
+        } catch (Exception $e) {
+            // Si hay error, revertir todo
+            $this->rollBack();
+            error_log("Error al anular venta completa: " . $e->getMessage());
+            return false;
+        }
+    }
+
+
 }
 
 

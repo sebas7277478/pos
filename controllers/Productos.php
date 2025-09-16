@@ -141,7 +141,7 @@ class Productos extends Controller
                             $res = array('msg' => 'ERROR AL MODIFICAR', 'type' => 'error');
                         }
                     } else {
-                        $res = array('msg' => 'LA CODIGO DEBE SER ÚNICO', 'type' => 'warning');
+                        $res = array('msg' => 'EL CÓDIGO DEBE SER ÚNICO', 'type' => 'warning');
                     }
                 }
             }

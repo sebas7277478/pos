@@ -76,7 +76,7 @@
                             <label for="precio_compra">Precio Compra <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
-                                <input class="form-control" type="number" step="0.01" min="0.01" name="precio_compra" id="precio_compra" placeholder="Nombre">
+                                <input class="form-control" type="number" step="0.01" min="0.01" name="precio_compra" id="precio_compra" placeholder="Precio de Compra">
                             </div>
                             <span id="errorCompra" class="text-danger"></span>
                         </div>
@@ -84,7 +84,7 @@
                             <label for="precio_venta">Precio Venta <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
-                                <input class="form-control" type="number" step="0.01" min="0.01" name="precio_venta" id="precio_venta" placeholder="Nombre">
+                                <input class="form-control" type="number" step="0.01" min="0.01" name="precio_venta" id="precio_venta" placeholder="Precio de Venta">
                             </div>
                             <span id="errorVenta" class="text-danger"></span>
                         </div>

@@ -1,14 +1,16 @@
 <?php
-class Query extends Conexion{
+class Query extends Conexion
+{
     private $pdo, $con;
-    public function __construct() {
+    public function __construct()
+    {
         $this->pdo = new Conexion();
         $this->con = $this->pdo->conectar();
     }
-    public function select($sql)
+    public function select($sql, $array = [])
     {
         $result = $this->con->prepare($sql);
-        $result->execute();
+        $result->execute($array);
         return $result->fetch(PDO::FETCH_ASSOC);
     }
     public function selectAll($sql)
@@ -39,5 +41,21 @@ class Query extends Conexion{
         }
         return $res;
     }
+
+    public function beginTransaction()
+    {
+        $this->con->beginTransaction();
+    }
+
+    public function commit()
+    {
+        $this->con->commit();
+    }
+
+    public function rollBack()
+    {
+        $this->con->rollBack();
+    }
+
 }
 ?>

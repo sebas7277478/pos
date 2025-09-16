@@ -47,70 +47,76 @@ class Ventas extends Controller
         $datos = json_decode($json, true);
         $array['productos'] = array();
         $total = 0;
-        $ganancia = 0;
-        if (!empty($datos['productos'])) {
-            $fecha = date('Y-m-d');
-            $hora = date('H:i:s');
-            $metodo = $datos['metodo'];
 
-            $resultSerie = $this->model->getSerie();
-            $numSerie = ($resultSerie['total'] == null) ? 1 : $resultSerie['total'] + 1;
-            $serie = $this->generate_numbers($numSerie, 1, 8);
-
-            $descuento = (!empty($datos['descuento'])) ? $datos['descuento'] : 0;
-            $idCliente = $datos['idCliente'];
-            if (empty($idCliente)) {
-                $res = array('msg' => 'EL CLIENTE ES REQUERIDO', 'type' => 'warning');
-            } else if (empty($metodo)) {
-                $res = array('msg' => 'EL METODO ES REQUERIDO', 'type' => 'warning');
-            } else {
-                $verifcarCaja = $this->model->getCaja($this->id_usuario);
-                if (empty($verifcarCaja['monto_inicial'])) {
-                    $res = array('msg' => 'La CAJA ESTA CERRADA', 'type' => 'warning');
-                } else {
-                    foreach ($datos['productos'] as $producto) {
-                        $result = $this->model->getProducto($producto['id']);
-                        $data['id'] = $result['id'];
-                        $data['nombre'] = $result['descripcion'];
-                        $data['precio'] = $producto['precio'];
-                        $data['cantidad'] = $producto['cantidad'];
-                        $subTotal = $producto['precio'] * $producto['cantidad'];
-                        array_push($array['productos'], $data);
-                        $total += $subTotal;
-                    }
-                    $datosProductos = json_encode($array['productos']);
-                    $pago = (!empty($datos['pago'])) ? $datos['pago'] : $total;
-                    $venta = $this->model->registrarVenta($datosProductos, $total, $fecha, $hora, $metodo, $descuento, $serie[0], $pago, $idCliente, $this->id_usuario);
-                    if ($venta > 0) {
-                        foreach ($datos['productos'] as $producto) {
-                            $result = $this->model->getProducto($producto['id']);
-                            //actualizar stock
-                            $nuevaCantidad = $result['cantidad'] - $producto['cantidad'];
-                            $totalVentas = $result['ventas'] + $producto['cantidad'];
-                            $this->model->actualizarStock($nuevaCantidad, $totalVentas, $result['id']);
-
-                            $movimiento = 'Venta N°: ' . $venta;
-                            $cantidad = $producto['cantidad'];
-                            $this->model->registrarMovimiento($movimiento, 'salida', $cantidad, $nuevaCantidad, $producto['id'], $this->id_usuario);
-                        }
-                        if ($metodo == 'CREDITO') {
-                            $monto = $total - $descuento;
-                            $this->model->registrarCredito($monto, $fecha, $hora, $venta);
-                        }
-                        if ($datos['impresion']) {
-                            $this->impresionDirecta($venta);
-                        }
-                        $res = array('msg' => 'VENTA GENERADA', 'type' => 'success', 'idVenta' => $venta);
-                    } else {
-                        $res = array('msg' => 'ERROR AL GENERAR VENTA', 'type' => 'error');
-                    }
-                }
-            }
-        } else {
-            $res = array('msg' => 'CARRITO VACIO', 'type' => 'warning');
+        if (empty($datos['productos'])) {
+            echo json_encode(['msg' => 'CARRITO VACÍO', 'type' => 'warning']);
+            return;
         }
-        echo json_encode($res);
-        die();
+
+        $fecha = date('Y-m-d');
+        $hora = date('H:i:s');
+        $metodo = $datos['metodo'];
+        $idCliente = $datos['idCliente'];
+        $descuento = !empty($datos['descuento']) ? $datos['descuento'] : 0;
+        $pago = !empty($datos['pago']) ? $datos['pago'] : 0;
+
+        if (empty($idCliente)) {
+            echo json_encode(['msg' => 'EL CLIENTE ES REQUERIDO', 'type' => 'warning']);
+            return;
+        }
+
+        if (empty($metodo)) {
+            echo json_encode(['msg' => 'EL MÉTODO DE PAGO ES REQUERIDO', 'type' => 'warning']);
+            return;
+        }
+
+        $verifcarCaja = $this->model->getCaja($this->id_usuario);
+        if (empty($verifcarCaja['monto_inicial'])) {
+            echo json_encode(['msg' => 'LA CAJA ESTÁ CERRADA', 'type' => 'warning']);
+            return;
+        }
+
+        // Armar productos y calcular total
+        foreach ($datos['productos'] as $producto) {
+            $result = $this->model->getProducto($producto['id']);
+            if (!$result)
+                continue;
+
+            $data['id'] = $result['id'];
+            $data['nombre'] = $result['descripcion'];
+            $data['precio'] = $producto['precio'];
+            $data['cantidad'] = $producto['cantidad'];
+            $subTotal = $producto['precio'] * $producto['cantidad'];
+            array_push($array['productos'], $data);
+            $total += $subTotal;
+        }
+
+        $resultSerie = $this->model->getSerie();
+        $numSerie = ($resultSerie['total'] == null) ? 1 : $resultSerie['total'] + 1;
+        $serie = $this->generate_numbers($numSerie, 1, 8)[0];
+
+        // Registrar venta completa con transacciones
+        $idVenta = $this->model->registrarVentaCompleta(
+            $array['productos'],
+            $total,
+            $fecha,
+            $hora,
+            $metodo,
+            $descuento,
+            $serie,
+            $pago ?: $total,
+            $idCliente,
+            $this->id_usuario
+        );
+
+        if ($idVenta > 0) {
+            if (!empty($datos['impresion'])) {
+                $this->impresionDirecta($idVenta);
+            }
+            echo json_encode(['msg' => 'VENTA GENERADA', 'type' => 'success', 'idVenta' => $idVenta]);
+        } else {
+            echo json_encode(['msg' => 'ERROR AL GENERAR LA VENTA', 'type' => 'error']);
+        }
     }
 
     public function reporte($datos)
@@ -194,34 +200,19 @@ class Ventas extends Controller
 
     public function anular($idVenta)
     {
-        if (isset($_GET) && is_numeric($idVenta)) {
-            $data = $this->model->anular($idVenta);
-            if ($data == 1) {
-                $resultVenta = $this->model->getVenta($idVenta);
-                $ventaProducto = json_decode($resultVenta['productos'], true);
-                foreach ($ventaProducto as $producto) {
-                    $result = $this->model->getProducto($producto['id']);
-                    $nuevaCantidad = $result['cantidad'] + $producto['cantidad'];
-                    $totalVentas = $result['ventas'] - $producto['cantidad'];
-                    $this->model->actualizarStock($nuevaCantidad, $totalVentas, $producto['id']);
-
-                    //movimientos
-                    $movimiento = 'Devolución Venta N°: ' . $idVenta;
-                    $this->model->registrarMovimiento($movimiento, 'entrada', $producto['cantidad'], $nuevaCantidad, $producto['id'], $this->id_usuario);
-                }
-                if ($resultVenta['metodo'] == 'CREDITO') {
-                    $this->model->anularCredito($idVenta);
-                }
-                $res = array('msg' => 'VENTA ANULADO', 'type' => 'success');
-            } else {
-                $res = array('msg' => 'ERROR AL ANULAR', 'type' => 'error');
-            }
-        } else {
-            $res = array('msg' => 'ERROR DESCONOCIDO', 'type' => 'error');
+        if (!is_numeric($idVenta)) {
+            echo json_encode(['msg' => 'ID inválido', 'type' => 'error']);
+            return;
         }
-        echo json_encode($res);
-        die();
+
+        $res = $this->model->anularVentaCompleta($idVenta, $this->id_usuario);
+        if ($res) {
+            echo json_encode(['msg' => 'VENTA ANULADA', 'type' => 'success']);
+        } else {
+            echo json_encode(['msg' => 'ERROR AL ANULAR LA VENTA', 'type' => 'error']);
+        }
     }
+
 
     public function impresionDirecta($idVenta)
     {
