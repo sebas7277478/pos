@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 /* Read more about isConfirmed, isDenied below */
                                 if (result.isConfirmed) {
                                     const ruta = base_url + 'ventas/reporte/ticked/' + res.idVenta;
-                                    //window.open(ruta, '_blank');
+                                    window.open(ruta, '_blank');
                                 } else if (result.isDenied) {
                                     const ruta = base_url + 'ventas/reporte/factura/' + res.idVenta;
                                     window.open(ruta, '_blank');

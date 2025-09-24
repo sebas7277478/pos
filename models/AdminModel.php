@@ -134,9 +134,15 @@ class AdminModel extends Query
     }
     public function totalCreditos()
     {
-        $sql = "SELECT( 
-                    (SELECT IFNULL(SUM(monto), 0) FROM creditos) - (SELECT IFNULL(SUM(abono), 0) FROM abonos) 
-                ) AS total";
+        $sql = "SELECT 
+                    SUM(c.monto - COALESCE(a.total_abonos, 0)) AS total
+                FROM creditos c
+                LEFT JOIN (
+                    SELECT id_credito, SUM(abono) AS total_abonos
+                    FROM abonos
+                    GROUP BY id_credito
+                ) a ON c.id = a.id_credito
+                WHERE c.estado = 1";
         return $this->select($sql);
     }
 }

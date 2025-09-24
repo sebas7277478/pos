@@ -1,7 +1,7 @@
 <?php
 class Query extends Conexion
 {
-    private $pdo, $con;
+    protected $pdo, $con;
     public function __construct()
     {
         $this->pdo = new Conexion();
@@ -13,10 +13,10 @@ class Query extends Conexion
         $result->execute($array);
         return $result->fetch(PDO::FETCH_ASSOC);
     }
-    public function selectAll($sql)
+    public function selectAll($sql, $array = [])
     {
         $result = $this->con->prepare($sql);
-        $result->execute();
+        $result->execute($array);
         return $result->fetchAll(PDO::FETCH_ASSOC);
     }
     public function insertar($sql, $array)

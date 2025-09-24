@@ -34,53 +34,67 @@ class Creditos extends Controller
     public function listar()
     {
         $data = $this->model->getCreditos();
-        for ($i = 0; $i < count($data); $i++) {
-            $credito = $this->model->getCredito($data[$i]['id']);
-            $result = $this->model->getAbono($data[$i]['id']);
-            $abonado = ($result['total'] == null) ? 0 : $result['total'];
+
+        foreach ($data as &$credito) {
+            $abonado = $this->model->getTotalAbonado($credito['id']);
             $restante = $credito['monto'] - $abonado;
-            if ($restante < 0.1 && $credito['estado'] = 1) {
-                $this->model->actualizarCredito(0, $data[$i]['id']);
-            }
-            $data[$i]['monto'] = number_format($data[$i]['monto'], 2);
-            $data[$i]['abonado'] = number_format($abonado, 2);
-            $data[$i]['restante'] = number_format($restante, 2);
-            $data[$i]['venta'] = 'N°: ' . $data[$i]['id_venta'];
-            //$data[$i]['acciones'] = '<a class="btn btn-danger" href="' . BASE_URL . 'creditos/reporte/' . $data[$i]['id'] . '" target="_blank"><i class="fas fa-file-pdf"></i></a>';
-            if ($data[$i]['estado'] == 1) {
-                $data[$i]['estado'] = '<span class="badge bg-warning">PENDIENTE</span>';
-            } else if ($data[$i]['estado'] == 2) {
-                $data[$i]['estado'] = '<span class="badge bg-danger">ANULADO</span>';
-            } else {
-                $data[$i]['estado'] = '<span class="badge bg-success">COMPLETADO</span>';
+
+            // Si ya está pagado, cerramos el crédito
+            if ($restante < 0.1 && $credito['estado'] == CreditosModel::ESTADO_PENDIENTE) {
+                $this->model->actualizarCredito(CreditosModel::ESTADO_COMPLETADO, $credito['id']);
+                $credito['estado'] = CreditosModel::ESTADO_COMPLETADO;
             }
 
+            $credito['monto'] = number_format($credito['monto'], 2);
+            $credito['abonado'] = number_format($abonado, 2);
+            $credito['restante'] = number_format(max(0, $restante), 2);
+            $credito['venta'] = 'N°: ' . $credito['id_venta'];
+
+            $credito['estado'] = $this->formatearEstado($credito['estado']);
         }
+
         echo json_encode($data, JSON_UNESCAPED_UNICODE);
         die();
     }
 
+    private function formatearEstado($estado)
+    {
+        switch ($estado) {
+            case CreditosModel::ESTADO_PENDIENTE:
+                return '<span class="badge bg-warning">PENDIENTE</span>';
+            case CreditosModel::ESTADO_ANULADO:
+                return '<span class="badge bg-danger">ANULADO</span>';
+            default:
+                return '<span class="badge bg-success">COMPLETADO</span>';
+        }
+    }
+
     public function buscar()
     {
-        $array = array();
-        $valor = strClean($_GET['term']);
-        $data = $this->model->buscarPorNombre($valor);        
+        $array = [];
+        $valor = strClean($_GET['term'] ?? '');
+
+        $data = $this->model->buscarPorNombre($valor);
+
         foreach ($data as $row) {
             $deuda = $this->model->getDeudaTotalCliente($row['id_cliente']);
-            $resultAbono = $this->model->getAbono($row['id']);
-            $abonado = ($resultAbono['total'] == null) ? 0 : $resultAbono['total'];
-            //calcular restante  (monto - abono)
+            $abonado = $this->model->getTotalAbonado($row['id']);
             $restante = $row['monto'] - $abonado;
-            $result['monto'] = $deuda;
-            $result['abonado'] = number_format($abonado, 2, '.', '');
-            $result['restante'] = number_format($deuda, 2, '.', '');
-            $result['fecha'] = $row['fecha'];
-            $result['id'] = $row['id_cliente'];
-            $result['label'] = $row['nombre'] . '   ' . 'Deuda Actual: ' . '  '. $deuda;
-            $result['telefono'] = $row['telefono'];
-            $result['direccion'] = $row['direccion'];            
-            array_push($array, $result);
+
+            $result = [
+                'monto' => $deuda,
+                'abonado' => number_format($abonado, 2, '.', ''),
+                'restante' => number_format($deuda, 2, '.', ''),
+                'fecha' => $row['fecha'],
+                'id' => $row['id_cliente'],
+                'label' => $row['nombre'] . ' | Deuda Actual: ' . $deuda,
+                'telefono' => $row['telefono'],
+                'direccion' => $row['direccion']
+            ];
+
+            $array[] = $result;
         }
+
         echo json_encode($array, JSON_UNESCAPED_UNICODE);
         die();
     }
@@ -89,18 +103,23 @@ class Creditos extends Controller
     {
         $json = file_get_contents('php://input');
         $datos = json_decode($json, true);
-        if (!empty($datos)) {
-            $idCredito = strClean($datos['idCredito']);
-            $monto = strClean($datos['monto_abonar']);
-            $data = $this->model->registrarAbono($monto, $idCredito, $this->id_usuario);
-            if ($data > 0) {
-                $res = array('msg' => 'ABONO REGISTRADO', 'type' => 'success');
+
+        if (!empty($datos['idCredito']) && !empty($datos['monto_abonar'])) {
+            $idCredito = intval($datos['idCredito']);
+            $monto = floatval($datos['monto_abonar']);
+
+            if ($monto <= 0) {
+                $res = ['msg' => 'El monto debe ser mayor a 0', 'type' => 'warning'];
             } else {
-                $res = array('msg' => 'ERROR AL REGISTRAR', 'type' => 'error');
+                $data = $this->model->registrarAbono($monto, $idCredito, $this->id_usuario);
+                $res = $data > 0
+                    ? ['msg' => 'ABONO REGISTRADO', 'type' => 'success']
+                    : ['msg' => 'ERROR AL REGISTRAR', 'type' => 'error'];
             }
         } else {
-            $res = array('msg' => 'TODO LOS CAMPOS SON REQUERIDO', 'type' => 'warning');
+            $res = ['msg' => 'TODOS LOS CAMPOS SON REQUERIDOS', 'type' => 'warning'];
         }
+
         echo json_encode($res);
         die();
     }
@@ -113,9 +132,11 @@ class Creditos extends Controller
     public function listarAbonos()
     {
         $data = $this->model->getHistorialAbonos();
-        for ($i = 0; $i < count($data); $i++) {
-            $data[$i]['credito'] = 'N°: ' . $data[$i]['id_credito'];
+
+        foreach ($data as &$row) {
+            $row['credito'] = 'N°: ' . $row['id_credito'];
         }
+
         echo json_encode($data);
         die();
     }
@@ -126,8 +147,13 @@ class Creditos extends Controller
         $datos = json_decode($json, true);
 
         if (!empty($datos['idCredito']) && !empty($datos['monto_abonar'])) {
-            $idCliente = $datos['idCredito'];
+            $idCliente = intval($datos['idCredito']);
             $monto = floatval($datos['monto_abonar']);
+
+            if ($monto <= 0) {
+                echo json_encode(['msg' => 'El monto debe ser mayor a 0', 'type' => 'warning']);
+                return;
+            }
 
             $creditos = $this->model->getCreditosActivosPorCliente($idCliente);
 
@@ -136,28 +162,34 @@ class Creditos extends Controller
                 return;
             }
 
-            foreach ($creditos as $credito) {
-                if ($monto <= 0)
-                    break;
+            try {
 
-                $abonado = $this->model->getAbono($credito['id'])['total'] ?? 0;
-                $restante = $credito['monto'] - $abonado;
+                foreach ($creditos as $credito) {
+                    if ($monto <= 0) {
+                        break;
+                    }
 
-                if ($restante <= 0)
-                    continue;
+                    $abonado = $this->model->getTotalAbonado($credito['id']);
+                    $restante = $credito['monto'] - $abonado;
 
-                $abonoAplicado = min($restante, $monto);
-                $this->model->registrarAbono($abonoAplicado, $credito['id'], $this->id_usuario);
-                $monto -= $abonoAplicado;
+                    if ($restante <= 0) {
+                        continue;
+                    }
 
-                // Cerrar crédito si está completamente pagado
-                if ($abonoAplicado >= $restante) {
-                    $this->model->actualizarCredito(0, $credito['id']);
+                    $abonoAplicado = min($restante, $monto);
+                    $this->model->registrarAbono($abonoAplicado, $credito['id'], $this->id_usuario);
+                    $monto -= $abonoAplicado;
                 }
+
+                echo json_encode(['msg' => 'ABONO DISTRIBUIDO', 'type' => 'success']);
+
+            } catch (Exception $e) {
+                echo json_encode([
+                    'msg' => 'ERROR AL DISTRIBUIR ABONO: ' . $e->getMessage(),
+                    'type' => 'error'
+                ]);
             }
 
-            echo json_encode(['msg' => 'ABONO DISTRIBUIDO', 'type' => 'success']); ;
-            $this->impresionDirecta($idCliente);
         } else {
             echo json_encode(['msg' => 'DATOS INSUFICIENTES', 'type' => 'error']);
         }

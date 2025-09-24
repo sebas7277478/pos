@@ -20,7 +20,7 @@ class Productos extends Controller
     }
     public function index()
     {
-        if (!verificar('productos')){
+        if (!verificar('productos')) {
             header('Location: ' . BASE_URL . 'admin/permisos');
             exit;
         }
@@ -32,13 +32,13 @@ class Productos extends Controller
     }
     public function listar()
     {
-        if (!verificar('productos')){
+        if (!verificar('productos')) {
             header('Location: ' . BASE_URL . 'admin/permisos');
             exit;
         }
         $data = $this->model->getProductos(1);
         for ($i = 0; $i < count($data); $i++) {
-            $foto = ($data[$i]['foto'] == null) ? 'assets/images/productos/default.png' :  $data[$i]['foto'];
+            $foto = ($data[$i]['foto'] == null) ? 'assets/images/productos/default.png' : $data[$i]['foto'];
             $data[$i]['imagen'] = '<img class="img-thumbnail" src="' . BASE_URL . $foto . '" width="50">';
             $data[$i]['acciones'] = '<div>
             <button class="btn btn-danger" type="button" onclick="eliminarProducto(' . $data[$i]['id'] . ')"><i class="fas fa-trash"></i></button>
@@ -50,131 +50,84 @@ class Productos extends Controller
     }
     public function registrar()
     {
-        if (!verificar('productos')){
+        if (!verificar('productos')) {
             header('Location: ' . BASE_URL . 'admin/permisos');
             exit;
         }
-        if (isset($_POST['codigo']) && isset($_POST['nombre'])) {
-            $id = strClean($_POST['id']);
-            $codigo = strClean($_POST['codigo']);
-            $nombre = strClean($_POST['nombre']);
-            $precio_compra = strClean($_POST['precio_compra']);
-            $precio_venta = strClean($_POST['precio_venta']);
-            $vencimiento = strClean($_POST['vencimiento']);
-            $id_medida = strClean($_POST['id_medida']);
-            $id_categoria = strClean($_POST['id_categoria']);
-            $fotoActual = strClean($_POST['foto_actual']);
-            $foto = $_FILES['foto'];
-            $name = $foto['name'];
-            $tmp = $foto['tmp_name'];
 
-            $destino = null;
-            if (!empty($name)) {
-                $fecha = date('YmdHis');
-                $destino = 'assets/images/productos/' . $fecha . '.jpg';
-            } else if (!empty($fotoActual) && empty($name)) {
-                $destino = $fotoActual;
-            }
-            if (empty($codigo)) {
-                $res = array('msg' => 'EL CODIGO ES REQUERIDO', 'type' => 'warning');
-            } else if (empty($nombre)) {
-                $res = array('msg' => 'EL NOMBRE ES REQUERIDO', 'type' => 'warning');
-            } else if (empty($precio_compra)) {
-                $res = array('msg' => 'EL PRECIO COMPRA ES REQUERIDO', 'type' => 'warning');
-            } else if (empty($precio_venta)) {
-                $res = array('msg' => 'EL PRECIO VENTA ES REQUERIDO', 'type' => 'warning');
-            } else if (empty($id_medida)) {
-                $res = array('msg' => 'LA MEDIDA ES REQUERIDO', 'type' => 'warning');
-            } else if (empty($id_categoria)) {
-                $res = array('msg' => 'LA CATEGORIA ES REQUERIDO', 'type' => 'warning');
+        $codigo = strClean($_POST['codigo']);
+        $nombre = strClean($_POST['nombre']);
+        $precio_compra = strClean($_POST['precio_compra']);
+        $precio_venta = strClean($_POST['precio_venta']);
+        $vencimiento = strClean($_POST['vencimiento']);
+        $id_medida = strClean($_POST['id_medida']);
+        $id_categoria = strClean($_POST['id_categoria']);
+        $id = strClean($_POST['id']);
+
+        $imgNombre = null;
+        $tmpFoto = $_FILES['imagen']['tmp_name'] ?? null;
+
+        if ($tmpFoto) {
+            $fecha = date("YmdHis");
+            $imgNombre = $fecha . ".jpg";
+            move_uploaded_file($tmpFoto, "Assets/images/productos/" . $imgNombre);
+        }
+
+        if ($id == "") {
+            // Validar si el código ya existe
+            $existe = $this->model->getValidar("codigo", $codigo, "registrar", 0);
+            if (!empty($existe)) {
+                $res = ["msg" => "EL CÓDIGO YA EXISTE", "type" => "warning"];
             } else {
-                if ($id == '') {
-                    $verificar = $this->model->getValidar('codigo', $codigo, 'registrar', 0);
-                    if (empty($verificar)) {
-                        $data = $this->model->registrar(
-                            $codigo,
-                            $nombre,
-                            $precio_compra,
-                            $precio_venta,
-                            $vencimiento,
-                            $id_medida,
-                            $id_categoria,
-                            $destino
-                        );
-                        if ($data > 0) {
-                            if (!empty($name)) {
-                                move_uploaded_file($tmp, $destino);
-                            }
-                            $res = array('msg' => 'PRODUCTO REGISTRADO', 'type' => 'success');
-                        } else {
-                            $res = array('msg' => 'ERROR AL REGISTRAR', 'type' => 'error');
-                        }
-                    } else {
-                        $res = array('msg' => 'LA CODIGO DEBE SER ÚNICO', 'type' => 'warning');
-                    }
-                } else {
-                    $verificar = $this->model->getValidar('codigo', $codigo, 'actualizar', $id);
-                    if (empty($verificar)) {
-                        //temp
-                        $temp = $this->model->editar($id);
-                        $imgTemp = ($temp['foto'] != null) ? $temp['foto'] : 'default.png';
-                        $data = $this->model->actualizar(
-                            $codigo,
-                            $nombre,
-                            $precio_compra,
-                            $precio_venta,
-                            $vencimiento,
-                            $id_medida,
-                            $id_categoria,
-                            $destino,
-                            $id
-                        );
-                        if ($data > 0) {
-                            if (file_exists($imgTemp) && $imgTemp != 'default.png') {
-                                unlink($imgTemp);
-                            }
-                            if (!empty($name)) {
-                                move_uploaded_file($tmp, $destino);
-                            }
-                            $res = array('msg' => 'PRODUCTO MODIFICADO', 'type' => 'success');
-                        } else {
-                            $res = array('msg' => 'ERROR AL MODIFICAR', 'type' => 'error');
-                        }
-                    } else {
-                        $res = array('msg' => 'EL CÓDIGO DEBE SER ÚNICO', 'type' => 'warning');
-                    }
-                }
+                $res = $this->model->registrar($codigo, $nombre, $precio_compra, $precio_venta, $vencimiento, $id_medida, $id_categoria, $imgNombre);
+                $res = ($res > 0)
+                    ? ["msg" => "PRODUCTO REGISTRADO", "type" => "success"]
+                    : ["msg" => "ERROR AL REGISTRAR", "type" => "error"];
             }
         } else {
-            $res = array('msg' => 'ERROR DESCONOCIDO', 'type' => 'error');
+            // Editar producto
+            $producto = $this->model->editar($id);
+
+            $fotoFinal = $imgNombre ?: $producto['foto']; // Mantener foto anterior si no suben nueva
+
+            $res = $this->model->actualizar($codigo, $nombre, $precio_compra, $precio_venta, $vencimiento, $id_medida, $id_categoria, $fotoFinal, $id);
+
+            if ($res == 1) {
+                // Solo borra la foto vieja si la actualización en BD fue exitosa y subieron una nueva
+                if ($imgNombre && $producto['foto'] && file_exists("Assets/images/productos/" . $producto['foto'])) {
+                    unlink("Assets/images/productos/" . $producto['foto']);
+                }
+                $res = ["msg" => "PRODUCTO MODIFICADO", "type" => "success"];
+            } else {
+                // Si falla y ya se subió una nueva imagen, la eliminamos para no dejar basura
+                if ($imgNombre && file_exists("Assets/images/productos/" . $imgNombre)) {
+                    unlink("Assets/images/productos/" . $imgNombre);
+                }
+                $res = ["msg" => "ERROR AL MODIFICAR", "type" => "error"];
+            }
         }
-        echo json_encode($res);
+
+        echo json_encode($res, JSON_UNESCAPED_UNICODE);
         die();
     }
 
     public function eliminar($idProducto)
     {
-        if (!verificar('productos')){
+        if (!verificar('productos')) {
             header('Location: ' . BASE_URL . 'admin/permisos');
             exit;
         }
-        if (isset($_GET) && is_numeric($idProducto)) {
-            $data = $this->model->eliminar(0, $idProducto);
-            if ($data == 1) {
-                $res = array('msg' => 'PRODUCTO DADO DE BAJA', 'type' => 'success');
-            } else {
-                $res = array('msg' => 'ERROR AL ELIMINAR', 'type' => 'error');
-            }
-        } else {
-            $res = array('msg' => 'ERROR DESCONOCIDO', 'type' => 'error');
-        }
-        echo json_encode($res);
+        $data = $this->model->eliminar(0, $idProducto);
+        $msg = ($data == 1)
+            ? ["msg" => "PRODUCTO DADO DE BAJA", "type" => "success"]
+            : ["msg" => "ERROR AL ELIMINAR", "type" => "error"];
+        echo json_encode($msg, JSON_UNESCAPED_UNICODE);
         die();
     }
 
     public function editar($idProducto)
     {
-        if (!verificar('productos')){
+        if (!verificar('productos')) {
             header('Location: ' . BASE_URL . 'admin/permisos');
             exit;
         }
@@ -185,7 +138,7 @@ class Productos extends Controller
 
     public function inactivos()
     {
-        if (!verificar('productos')){
+        if (!verificar('productos')) {
             header('Location: ' . BASE_URL . 'admin/permisos');
             exit;
         }
@@ -196,7 +149,7 @@ class Productos extends Controller
 
     public function listarInactivos()
     {
-        if (!verificar('productos')){
+        if (!verificar('productos')) {
             header('Location: ' . BASE_URL . 'admin/permisos');
             exit;
         }
@@ -213,21 +166,15 @@ class Productos extends Controller
 
     public function restaurar($idProducto)
     {
-        if (!verificar('productos')){
+        if (!verificar('productos')) {
             header('Location: ' . BASE_URL . 'admin/permisos');
             exit;
         }
-        if (isset($_GET) && is_numeric($idProducto)) {
-            $data = $this->model->eliminar(1, $idProducto);
-            if ($data == 1) {
-                $res = array('msg' => 'PRODUCTO RESTAURADO', 'type' => 'success');
-            } else {
-                $res = array('msg' => 'ERROR AL RESTAURAR', 'type' => 'error');
-            }
-        } else {
-            $res = array('msg' => 'ERROR DESCONOCIDO', 'type' => 'error');
-        }
-        echo json_encode($res);
+        $data = $this->model->eliminar(1, $idProducto);
+        $msg = ($data == 1)
+            ? ["msg" => "PRODUCTO RESTAURADO", "type" => "success"]
+            : ["msg" => "ERROR AL REINGRESAR", "type" => "error"];
+        echo json_encode($msg, JSON_UNESCAPED_UNICODE);
         die();
     }
 
@@ -251,7 +198,7 @@ class Productos extends Controller
         $data = $this->model->buscarPorNombre($valor);
         foreach ($data as $row) {
             $result['id'] = $row['id'];
-            $result['label'] = $row['descripcion'] .'    Stock:  ' . $row['cantidad'];
+            $result['label'] = $row['descripcion'] . '    Stock:  ' . $row['cantidad'];
             $result['stock'] = $row['cantidad'];
             $result['precio_venta'] = $row['precio_venta'];
             $result['precio_compra'] = $row['precio_compra'];
@@ -268,7 +215,7 @@ class Productos extends Controller
         $data = $this->model->buscarPorNombre($valor);
         foreach ($data as $row) {
             $result['id'] = $row['id'];
-            $result['label'] = $row['descripcion'] .'    Stock:  ' . $row['cantidad'] . '   $:  '.$row['precio_venta'];
+            $result['label'] = $row['descripcion'] . '    Stock:  ' . $row['cantidad'] . '   $:  ' . $row['precio_venta'];
             $result['stock'] = $row['cantidad'];
             $result['precio_venta'] = $row['precio_venta'];
             $result['precio_compra'] = $row['precio_compra'];
@@ -389,7 +336,7 @@ class Productos extends Controller
         $generator = new Picqer\Barcode\BarcodeGeneratorPNG();
         $ruta = 'assets/images/barcode/';
         foreach ($data['productos'] as $producto) {
-            file_put_contents($ruta . $producto['id']. '.png', $generator->getBarcode($producto['codigo'], $generator::TYPE_CODE_128, 3, 50));
+            file_put_contents($ruta . $producto['id'] . '.png', $generator->getBarcode($producto['codigo'], $generator::TYPE_CODE_128, 3, 50));
         }
         ob_start();
         $data['title'] = 'Barcode';

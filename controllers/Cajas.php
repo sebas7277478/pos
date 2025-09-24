@@ -7,7 +7,9 @@ class Cajas extends Controller
     public function __construct()
     {
         parent::__construct();
-        session_start();
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
         if (empty($_SESSION['id_usuario'])) {
             header('Location: ' . BASE_URL);
             exit;
@@ -27,109 +29,169 @@ class Cajas extends Controller
     }
     public function abrirCaja()
     {
+        header('Content-Type: application/json; charset=utf-8');
         $json = file_get_contents('php://input');
         $datos = json_decode($json, true);
         if (empty($datos['monto'])) {
-            $res = array('msg' => 'EL MONTO ES REQUERIDO', 'type' => 'warning');
-        } else {
-            $verificar = $this->model->getCaja($this->id_usuario);
-            if (empty($verificar)) {
-                $fecha_apertura = date('Y-m-d');
-                $monto = strClean($datos['monto']);
-                $data = $this->model->abrirCaja($monto, $fecha_apertura, $this->id_usuario);
-                if ($data > 0) {
-                    $res = array('msg' => 'CAJA ABIERTA', 'type' => 'success');
-                } else {
-                    $res = array('msg' => 'ERROR AL ABRIR LA CAJA', 'type' => 'error');
-                }
-            } else {
-                $res = array('msg' => 'LA CAJA YA ESTA ABIERTA', 'type' => 'warning');
-            }
+            http_response_code(400);
+            echo json_encode(['msg' => 'EL MONTO ES REQUERIDO', 'type' => 'warning']);
+            exit;
         }
-        echo json_encode($res);
-        die();
+
+        // Validar monto numérico
+        $monto = strClean($datos['monto']);
+        if (!is_numeric($monto) || (float) $monto < 0) {
+            http_response_code(400);
+            echo json_encode(['msg' => 'MONTO INVÁLIDO', 'type' => 'error']);
+            exit;
+        }
+        $monto = (float) $monto;
+
+        $verificar = $this->model->getCaja($this->id_usuario);
+        if (!empty($verificar)) {
+            echo json_encode(['msg' => 'LA CAJA YA ESTA ABIERTA', 'type' => 'warning']);
+            exit;
+        }
+
+        $fecha_apertura = date('Y-m-d');
+        $data = $this->model->abrirCaja($monto, $fecha_apertura, $this->id_usuario);
+        if ($data > 0) {
+            echo json_encode(['msg' => 'CAJA ABIERTA', 'type' => 'success']);
+        } else {
+            http_response_code(500);
+            echo json_encode(['msg' => 'ERROR AL ABRIR LA CAJA', 'type' => 'error']);
+        }
+        exit;
     }
 
     public function listar()
     {
+        header('Content-Type: application/json; charset=utf-8');
         $data = $this->model->getCajas();
         for ($i = 0; $i < count($data); $i++) {
-            $data[$i]['accion'] = '<a href="' . BASE_URL . 'cajas/historialRepote/' . $data[$i]['id'] . '" target="_blank" class="btn btn-danger"><i class="fas fa-file-pdf"></i></a>';
+            // Cambiado a historialReporte (más claro) — asegúrate de que la ruta coincide.
+            $data[$i]['accion'] = '<a href="' . BASE_URL . 'cajas/historialReporte/' . $data[$i]['id'] . '" target="_blank" class="btn btn-danger"><i class="fas fa-file-pdf"></i></a>';
         }
         echo json_encode($data);
-        die();
+        exit;
     }
 
     public function registraGasto()
     {
-        if (isset($_POST['monto']) && isset($_POST['descripcion'])) {
-            if (empty($_POST['monto'])) {
-                $res = array('msg' => 'EL MONTO ES REQUERIDO', 'type' => 'warning');
-            } else if (empty($_POST['descripcion'])) {
-                $res = array('msg' => 'LA DESCRIPCION REQUERIDO', 'type' => 'warning');
-            } else {
-                $monto = strClean($_POST['monto']);
-                $verificarMonto = $this->getDatos();
-                $Ingresos = $verificarMonto['saldo'];
-                if ($monto > $Ingresos) {
-                    $res = array('msg' => 'SALDO DISPONIBLE: ' . $Ingresos, 'type' => 'error');
-                } else {
-                    $descripcion = strClean($_POST['descripcion']);
-                    $foto = $_FILES['foto'];
-                    $name = $foto['name'];
-                    $tmp = $foto['tmp_name'];
+        header('Content-Type: application/json; charset=utf-8');
 
-                    $destino = null;
-                    if (!empty($name)) {
-                        $fecha = date('YmdHis');
-                        $destino = 'assets/images/gastos/' . $fecha . '.jpg';
-                    }
-                    $data = $this->model->registraGasto($monto, $descripcion, $destino, $this->id_usuario);
-                    if ($data > 0) {
-                        if (!empty($name)) {
-                            move_uploaded_file($tmp, $destino);
-                        }
-                        $res = array('msg' => 'GASTO REGISTRADO', 'type' => 'success');
-                    } else {
-                        $res = array('msg' => 'ERROR AL REGISTRAR GASTOS', 'type' => 'error');
-                    }
-                }
-            }
+        if (!isset($_POST['monto']) || !isset($_POST['descripcion'])) {
+            http_response_code(400);
+            echo json_encode(['msg' => 'DATOS INCOMPLETOS', 'type' => 'warning']);
+            exit;
         }
-        echo json_encode($res);
-        die();
+
+        $montoRaw = strClean($_POST['monto']);
+        if (!is_numeric($montoRaw) || (float) $montoRaw <= 0) {
+            http_response_code(400);
+            echo json_encode(['msg' => 'MONTO INVÁLIDO', 'type' => 'warning']);
+            exit;
+        }
+        $monto = (float) $montoRaw;
+
+        $descripcion = strClean($_POST['descripcion']);
+
+        // Obtener saldo actual
+        $verificarMonto = $this->getDatos();
+        $Ingresos = (float) ($verificarMonto['saldo'] ?? 0);
+        if ($monto > $Ingresos) {
+            http_response_code(400);
+            echo json_encode(['msg' => 'SALDO DISPONIBLE: ' . number_format($Ingresos, 2), 'type' => 'error']);
+            exit;
+        }
+
+        // Manejo seguro de archivo
+        $destino = null;
+        if (!empty($_FILES['foto']) && $_FILES['foto']['error'] !== UPLOAD_ERR_NO_FILE) {
+            $foto = $_FILES['foto'];
+            $allowed = ['image/jpeg', 'image/jpg', 'image/png'];
+            $maxSize = 2 * 1024 * 1024; // 2MB
+
+            if ($foto['error'] !== UPLOAD_ERR_OK) {
+                http_response_code(400);
+                echo json_encode(['msg' => 'ERROR UPLOAD: ' . $foto['error'], 'type' => 'error']);
+                exit;
+            }
+            if ($foto['size'] > $maxSize) {
+                http_response_code(400);
+                echo json_encode(['msg' => 'LA IMAGEN EXCEDE 2MB', 'type' => 'warning']);
+                exit;
+            }
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = finfo_file($finfo, $foto['tmp_name']);
+            finfo_close($finfo);
+            if (!in_array($mime, $allowed)) {
+                http_response_code(400);
+                echo json_encode(['msg' => 'TIPO DE ARCHIVO NO PERMITIDO', 'type' => 'warning']);
+                exit;
+            }
+            // Crear carpeta si no existe
+            $folder = __DIR__ . '/../assets/images/gastos/';
+            if (!is_dir($folder)) {
+                mkdir($folder, 0755, true);
+            }
+            $ext = $mime === 'image/png' ? '.png' : '.jpg';
+            $fecha = date('YmdHis') . '_' . bin2hex(random_bytes(4));
+            $destinoRel = 'assets/images/gastos/' . $fecha . $ext;
+            $destino = $folder . $fecha . $ext;
+
+            // mover archivo de forma segura
+            if (!move_uploaded_file($foto['tmp_name'], $destino)) {
+                http_response_code(500);
+                echo json_encode(['msg' => 'ERROR AL GUARDAR IMAGEN', 'type' => 'error']);
+                exit;
+            }
+            // Guardamos la ruta relativa para la DB
+            $destino = $destinoRel;
+        }
+
+        $data = $this->model->registraGasto($monto, $descripcion, $destino, $this->id_usuario);
+        if ($data > 0) {
+            echo json_encode(['msg' => 'GASTO REGISTRADO', 'type' => 'success']);
+        } else {
+            http_response_code(500);
+            echo json_encode(['msg' => 'ERROR AL REGISTRAR GASTOS', 'type' => 'error']);
+        }
+        exit;
     }
 
     public function listarGastos()
     {
+        header('Content-Type: application/json; charset=utf-8');
         $data = $this->model->getGastos();
         for ($i = 0; $i < count($data); $i++) {
-            $data[$i]['foto'] = '<a href="' . BASE_URL . $data[$i]['foto'] . '" target="_blank">
-            <img class="img-thumbnail" src="' . BASE_URL . $data[$i]['foto'] . '" width="200">
-            </a>';
+            $foto = !empty($data[$i]['foto']) ? BASE_URL . $data[$i]['foto'] : BASE_URL . 'assets/images/no-image.png';
+            $data[$i]['foto'] = '<a href="' . $foto . '" target="_blank">
+                <img class="img-thumbnail" src="' . $foto . '" width="200">
+                </a>';
         }
         echo json_encode($data);
-        die();
+        exit;
     }
 
     public function movimientos()
     {
+        header('Content-Type: application/json; charset=utf-8');
         $data = $this->getDatos();
         $data['moneda'] = MONEDA;
         echo json_encode($data);
-        die();
+        exit;
     }
 
     public function getDatos()
     {
-        $ventas = (float) $this->model->getVentas('total', $this->id_usuario)['total'] ?? 0;
-        $descuento = (float) $this->model->getVentas('descuento', $this->id_usuario)['total'] ?? 0;
-        $apartados = (float) $this->model->getApartados($this->id_usuario)['total'] ?? 0;
-        $creditos = (float) $this->model->getAbonos($this->id_usuario)['total'] ?? 0;
-        $creditosCompras = (float) $this->model->getAbonosCompras($this->id_usuario)['total'] ?? 0;
-        $compras = (float) $this->model->getCompras($this->id_usuario)['total'] ?? 0;
-        $gastos = (float) $this->model->getTotalGastos($this->id_usuario)['total'] ?? 0;
-
+        $ventas = (float) ($this->model->getVentas('total', $this->id_usuario)['total'] ?? 0);
+        $descuento = (float) ($this->model->getVentas('descuento', $this->id_usuario)['total'] ?? 0);
+        $apartados = (float) ($this->model->getApartados($this->id_usuario)['total'] ?? 0);
+        $creditos = (float) ($this->model->getAbonos($this->id_usuario)['total'] ?? 0);
+        $creditosCompras = (float) ($this->model->getAbonosCompras($this->id_usuario)['total'] ?? 0);
+        $compras = (float) ($this->model->getCompras($this->id_usuario)['total'] ?? 0);
+        $gastos = (float) ($this->model->getTotalGastos($this->id_usuario)['total'] ?? 0);
         $montoInicial = (float) ($this->model->getCaja($this->id_usuario)['monto_inicial'] ?? 0);
 
         $egresos = $compras + $gastos + $creditosCompras;
@@ -142,8 +204,6 @@ class Cajas extends Controller
             'montoInicial' => $montoInicial,
             'gastos' => $gastos,
             'saldo' => $saldo,
-
-            // Formateados solo para mostrar
             'egresosDecimal' => number_format($egresos, 2),
             'ingresosDecimal' => number_format($ingresos, 2),
             'inicialDecimal' => number_format($montoInicial, 2),
@@ -153,14 +213,15 @@ class Cajas extends Controller
     }
     public function reporte()
     {
-        ob_start();
-
         $data['title'] = 'Reporte Actual';
         $data['actual'] = true;
         $data['empresa'] = $this->model->getEmpresa();
         $data['movimientos'] = $this->getDatos();
+
+        ob_start();
         $this->views->getView('cajas', 'reporte', $data);
         $html = ob_get_clean();
+
         $dompdf = new Dompdf();
         $options = $dompdf->getOptions();
         $options->set('isJavascriptEnabled', true);
@@ -168,55 +229,56 @@ class Cajas extends Controller
         $dompdf->setOptions($options);
         $dompdf->loadHtml($html);
 
-        $dompdf->setPaper('A4', 'vertical');
-
-        // Render the HTML as PDF
+        $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
-
-        // Output the generated PDF to Browser
         $dompdf->stream('reporte.pdf', array('Attachment' => false));
     }
 
     public function cerrarCaja()
     {
+        header('Content-Type: application/json; charset=utf-8');
+
         $data = $this->getDatos();
-        $ventas = $this->model->getTotalVentas($this->id_usuario);
+        $ventasInfo = $this->model->getTotalVentas($this->id_usuario);
         $fecha_cierre = date('Y-m-d');
         $montoFinal = $data['ingresos'];
-        $totalVentas = $ventas['total'];
+        $totalVentas = (int) ($ventasInfo['total'] ?? 0);
         $egresos = $data['egresos'];
         $gastos = $data['gastos'];
+
         $result = $this->model->cerrarCaja($fecha_cierre, $montoFinal, $totalVentas, $egresos, $gastos, $this->id_usuario);
+
         if ($result == 1) {
-            $this->model->actualizarApertura('compras', $this->id_usuario);
-            $this->model->actualizarApertura('gastos', $this->id_usuario);
-            $this->model->actualizarApertura('ventas', $this->id_usuario);
-            $this->model->actualizarApertura('abonos', $this->id_usuario);
-            $this->model->actualizarApertura('abonos_compras', $this->id_usuario);
-            $this->model->actualizarApertura('detalle_apartado', $this->id_usuario);
-            $res = array('msg' => 'CAJA CERRADO', 'type' => 'success');
+            echo json_encode(['msg' => 'CAJA CERRADA', 'type' => 'success']);
         } else {
-            $res = array('msg' => 'ERROR AL CERRAR LA CAJA', 'type' => 'error');
+            http_response_code(500);
+            echo json_encode(['msg' => 'ERROR AL CERRAR LA CAJA', 'type' => 'error']);
         }
-        echo json_encode($res);
-        die();
+        exit;
     }
 
     public function historialRepote($idCaja)
     {
+        // seguridad: id numeric
+        $idCaja = (int) $idCaja;
         ob_start();
         $data['title'] = 'Reporte: ' . $idCaja;
         $data['idCaja'] = $idCaja;
         $data['actual'] = false;
         $data['empresa'] = $this->model->getEmpresa();
         $datos = $this->model->getHistorialCajas($idCaja);
-        $data['movimientos']['inicialDecimal'] = number_format($datos['monto_inicial'], 2);
-        $data['movimientos']['ingresosDecimal'] = number_format($datos['monto_final'], 2);
-        $data['movimientos']['egresosDecimal'] = number_format($datos['egresos'], 2);
-        $data['movimientos']['gastosDecimal'] = number_format($datos['gastos']);
-        $data['movimientos']['saldoDecimal'] = number_format($datos['monto_final'] + $datos['monto_inicial'], 2);
+
+        $data['movimientos']['inicialDecimal'] = number_format((float) ($datos['monto_inicial'] ?? 0), 2);
+        $data['movimientos']['ingresosDecimal'] = number_format((float) ($datos['monto_final'] ?? 0), 2);
+        $data['movimientos']['egresosDecimal'] = number_format((float) ($datos['egresos'] ?? 0), 2);
+        $data['movimientos']['gastosDecimal'] = number_format((float) ($datos['gastos'] ?? 0), 2);
+        // saldo en histórico: depende de tu lógica; aquí lo calculo como final + inicial - egresos
+        $saldoHistorico = ((float) ($datos['monto_final'] ?? 0) + (float) ($datos['monto_inicial'] ?? 0)) - (float) ($datos['egresos'] ?? 0);
+        $data['movimientos']['saldoDecimal'] = number_format($saldoHistorico, 2);
+
         $this->views->getView('cajas', 'reporte', $data);
         $html = ob_get_clean();
+
         $dompdf = new Dompdf();
         $options = $dompdf->getOptions();
         $options->set('isJavascriptEnabled', true);
@@ -224,12 +286,8 @@ class Cajas extends Controller
         $dompdf->setOptions($options);
         $dompdf->loadHtml($html);
 
-        $dompdf->setPaper('A4', 'vertical');
-
-        // Render the HTML as PDF
+        $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
-
-        // Output the generated PDF to Browser
         $dompdf->stream('reporte.pdf', array('Attachment' => false));
     }
 

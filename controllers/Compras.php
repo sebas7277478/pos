@@ -16,6 +16,8 @@ class Compras extends Controller
         parent::__construct();
         require_once 'controllers/Cajas.php';
         $this->caja = new Cajas();
+        if (session_status() === PHP_SESSION_NONE)
+            session_start();
         if (empty($_SESSION['id_usuario'])) {
             header('Location: ' . BASE_URL);
             exit;
@@ -39,77 +41,66 @@ class Compras extends Controller
         $json = file_get_contents('php://input');
         $datos = json_decode($json, true);
         $array['productos'] = array();
-        if (!empty($datos['productos'])) {
-            $idproveedor = $datos['idProveedor'];
-            $indice = $datos['serie'];
-            $numberSerie = $this->generate_numbers($indice, 1, 8);
-            $fecha = date('Y-m-d');
-            $hora = date('H:i:s');
-            $metodo = $datos['metodo'];
-            $serie = $numberSerie[0];
-            if (empty($idproveedor)) {
-                $res = array('msg' => 'EL PROVEEDOR ES REQUERIDO', 'type' => 'warning');
-            } else if (empty($serie)) {
-                $res = array('msg' => 'LA SERIE ES REQUERIDO', 'type' => 'warning');
-            } else {
-                $total = 0;
-                $saldo = $this->caja->getDatos();
-                foreach ($datos['productos'] as $producto) {
-                    $result = $this->model->getProducto($producto['id']);
-                    $data['id'] = $result['id'];
-                    $data['nombre'] = $result['descripcion'];
-                    $data['precio'] = $result['precio_compra'];
-                    $data['cantidad'] = $producto['cantidad'];
-                    $subTotal = $result['precio_compra'] * $producto['cantidad'];
-                    array_push($array['productos'], $data);
-                    $total += $subTotal;
-                }
-                if ($metodo == 'CONTADO') {
-                    if ($saldo['saldo'] >= $total) {
-                        $datosProductos = json_encode($array['productos']);
-                        $compra = $this->model->registrarCompra($datosProductos, $total, $fecha, $hora, $metodo, $serie, $idproveedor, $this->id_usuario);
-                        if ($compra > 0) {
-                            foreach ($datos['productos'] as $producto) {
-                                $result = $this->model->getProducto($producto['id']);
-                                //actualizar stock
-                                $nuevaCantidad = $result['cantidad'] + $producto['cantidad'];
-                                $this->model->actualizarStock($nuevaCantidad, $result['id']);
-                                $movimiento = 'Compra N°: ' . $compra . ' - ' . $metodo;
-                                $this->model->registrarMovimiento($movimiento, 'entrada', $producto['cantidad'], $nuevaCantidad, $producto['id'], $this->id_usuario);
-                            }
-                            $res = array('msg' => 'COMPRA GENERADA', 'type' => 'success', 'idCompra' => $compra);
-                        } else {
-                            $res = array('msg' => 'ERROR AL CREAR COMPRA', 'type' => 'error');
-                        }
-                    } else {
-                        $res = array('msg' => 'SALDO DISPONIBLE: ' . MONEDA . $saldo['saldo'], 'type' => 'warning');
-                    }
-                }
-                if ($metodo == 'CREDITO') {
-                    $datosProductos = json_encode($array['productos']);
-
-                    $compra = $this->model->registrarCompra($datosProductos, $total, $fecha, $hora, $metodo, $serie, $idproveedor, $this->id_usuario);
-                    $this->model->registrarCredito($total, $fecha, $hora, $idproveedor, $this->id_usuario, $compra);
-
-                    if ($compra > 0) {
-                        foreach ($datos['productos'] as $producto) {
-                            $result = $this->model->getProducto($producto['id']);
-                            //actualizar stock
-                            $nuevaCantidad = $result['cantidad'] + $producto['cantidad'];
-                            $this->model->actualizarStock($nuevaCantidad, $result['id']);
-                            $movimiento = 'Compra N°: ' . $compra . ' - ' . $metodo;
-                            $this->model->registrarMovimiento($movimiento, 'entrada', $producto['cantidad'], $nuevaCantidad, $producto['id'], $this->id_usuario);
-                        }
-                        $res = array('msg' => 'COMPRA GENERADA', 'type' => 'success', 'idCompra' => $compra);
-                    } else {
-                        $res = array('msg' => 'ERROR AL CREAR COMPRA', 'type' => 'error');
-                    }
-                }
-            }
-        } else {
-            $res = array('msg' => 'CARRITO VACIO', 'type' => 'warning');
+        if (empty($datos['productos'])) {
+            echo json_encode(['msg' => 'CARRITO VACIO', 'type' => 'warning']);
+            die();
         }
-        echo json_encode($res);
+
+
+        $idproveedor = $datos['idProveedor'] ?? null;
+        $indice = $datos['serie'] ?? null;
+        $numberSerie = $this->generate_numbers($indice, 1, 8);
+        $fecha = date('Y-m-d');
+        $hora = date('H:i:s');
+        $metodo = $datos['metodo'] ?? null;
+        $serie = $numberSerie[0] ?? null;
+
+
+        if (empty($idproveedor)) {
+            echo json_encode(['msg' => 'EL PROVEEDOR ES REQUERIDO', 'type' => 'warning']);
+            die();
+        }
+        if (empty($serie)) {
+            echo json_encode(['msg' => 'LA SERIE ES REQUERIDO', 'type' => 'warning']);
+            die();
+        }
+
+
+        // armado productos y total
+        $total = 0;
+        foreach ($datos['productos'] as $producto) {
+            $result = $this->model->getProducto($producto['id']);
+            if (!$result)
+                continue;
+            $dataP = [
+                'id' => $result['id'],
+                'nombre' => $result['descripcion'],
+                'precio' => $result['precio_compra'],
+                'cantidad' => $producto['cantidad']
+            ];
+            $subTotal = $result['precio_compra'] * $producto['cantidad'];
+            $array['productos'][] = $dataP;
+            $total += $subTotal;
+        }
+
+
+        // Si metodo contado validar saldo de caja
+        $saldo = $this->caja->getDatos();
+        if ($metodo == 'CONTADO' && ($saldo['saldo'] < $total)) {
+            echo json_encode(['msg' => 'SALDO DISPONIBLE: ' . MONEDA . number_format($saldo['saldo'], 2), 'type' => 'warning']);
+            die();
+        }
+
+
+        // Llamar al modelo que hace todo dentro de transacción
+        $idCompra = $this->model->registrarCompraCompleta($array['productos'], $total, $fecha, $hora, $metodo, $serie, $idproveedor, $this->id_usuario);
+
+
+        if ($idCompra > 0) {
+            echo json_encode(['msg' => 'COMPRA GENERADA', 'type' => 'success', 'idCompra' => $idCompra]);
+        } else {
+            echo json_encode(['msg' => 'ERROR AL CREAR COMPRA', 'type' => 'error']);
+        }
         die();
     }
 
@@ -173,49 +164,42 @@ class Compras extends Controller
 
     public function anular($idCompra)
     {
-        if (isset($_GET) && is_numeric($idCompra)) {
-            $data = $this->model->anular($idCompra);
-            if ($data == 1) {
-                $resultCompra = $this->model->getCompra($idCompra);
-                $compraProducto = json_decode($resultCompra['productos'], true);
-                foreach ($compraProducto as $producto) {
-                    $result = $this->model->getProducto($producto['id']);
-                    $nuevaCantidad = $result['cantidad'] - $producto['cantidad'];
-                    $this->model->actualizarStock($nuevaCantidad, $producto['id']);
-                    //movimientos
-                    $movimiento = 'Devolución Compra N°: ' . $idCompra;
-                    $this->model->registrarMovimiento($movimiento, 'salida', $producto['cantidad'], $nuevaCantidad, $producto['id'], $this->id_usuario);
-                }
-                $res = array('msg' => 'COMPRA ANULADO', 'type' => 'success');
-            } else {
-                $res = array('msg' => 'ERROR AL ANULAR', 'type' => 'error');
-            }
-        } else {
-            $res = array('msg' => 'ERROR DESCONOCIDO', 'type' => 'error');
+        if (!is_numeric($idCompra)) {
+            echo json_encode(['msg' => 'ID inválido', 'type' => 'error']);
+            die();
         }
-        echo json_encode($res);
+
+
+        $res = $this->model->anularCompraCompleta($idCompra, $this->id_usuario);
+        if ($res) {
+            echo json_encode(['msg' => 'COMPRA ANULADA', 'type' => 'success']);
+        } else {
+            echo json_encode(['msg' => 'ERROR AL ANULAR', 'type' => 'error']);
+        }
         die();
     }
 
     public function buscarCreditoActivo()
     {
-        $array = array();
-        $valor = strClean($_GET['term']);
+        $valor = strClean($_GET['term'] ?? '');
         $data = $this->model->buscarCreditoActivo($valor);
+        $array = [];
         foreach ($data as $row) {
             $resultAbono = $this->model->getAbonoCredito($row['id']);
             $abonado = ($resultAbono['total'] == null) ? 0 : $resultAbono['total'];
             $restante = $row['monto'] - $abonado;
-            $result['monto'] = $row['monto'];
-            $result['abonado'] = $abonado;
-            $result['restante'] = $restante;
-            $result['fecha'] = $row['fecha'];
-            $result['id'] = $row['id'];
-            $result['label'] = $row['nombre'] . '    Fecha Compra: ' . $row['fecha'] . '  Deuda Actual: ' . $restante;
-            $result['telefono'] = $row['telefono'];
-            $result['direccion'] = $row['direccion'];
-            $result['id_compra'] = $row['id_compra'];
-            array_push($array, $result);
+            $result = [
+                'monto' => $row['monto'],
+                'abonado' => $abonado,
+                'restante' => $restante,
+                'fecha' => $row['fecha'],
+                'id' => $row['id'],
+                'label' => $row['nombre'] . ' Fecha Compra: ' . $row['fecha'] . ' Deuda Actual: ' . $restante,
+                'telefono' => $row['telefono'],
+                'direccion' => $row['direccion'],
+                'id_compra' => $row['id_compra']
+            ];
+            $array[] = $result;
         }
         echo json_encode($array, JSON_UNESCAPED_UNICODE);
         die();
@@ -234,32 +218,29 @@ class Compras extends Controller
     {
         $json = file_get_contents('php://input');
         $datos = json_decode($json, true);
-        if (!empty($datos)) {
-            $saldo = $this->caja->getDatos();
-            $fecha = $datos['fecha'];
-            $idCreditoCompra = $datos['idCreditoCompra'];
-            $monto = strClean($datos['monto_abonar']);
-            if ($saldo['saldo'] >= $monto) {
-                $data = $this->model->registrarAbonoCompras($monto, $fecha, $idCreditoCompra, $this->id_usuario);
-                if ($data > 0) {
-                    $res = array('msg' => 'PAGO REGISTRADO', 'type' => 'success');
-                } else {
-                    $res = array('msg' => 'ERROR AL REGISTRAR', 'type' => 'error');
-                }
-            } else {
-                $res = array('msg' => 'SALDO DISPONIBLE: ' . MONEDA . $saldo['saldo'], 'type' => 'warning');
-            }
-        } else {
-            $res = array('msg' => 'TODOS LOS CAMPOS SON REQUERIDOS', 'type' => 'warning');
+        if (empty($datos)) {
+            echo json_encode(['msg' => 'TODOS LOS CAMPOS SON REQUERIDOS', 'type' => 'warning']);
+            die();
         }
-        echo json_encode($res);
 
-        $credito = $this->model->getCredito($datos['idCreditoCompra']);
-        $resultAbono = $this->model->getAbonoCredito($datos['idCreditoCompra']);
-        $abonado = ($resultAbono['total'] == null) ? 0 : $resultAbono['total'];
-        $restante = $credito['monto'] - $abonado;
-        if ($restante < 0.1 && $credito['estado'] = 1) {
-            $this->model->actualizarCreditoCompras(0, $datos['idCreditoCompra']);
+
+        $saldo = $this->caja->getDatos();
+        $fecha = $datos['fecha'];
+        $idCreditoCompra = $datos['idCreditoCompra'];
+        $monto = (float) strClean($datos['monto_abonar']);
+
+
+        if ($saldo['saldo'] < $monto) {
+            echo json_encode(['msg' => 'SALDO DISPONIBLE: ' . MONEDA . $saldo['saldo'], 'type' => 'warning']);
+            die();
+        }
+
+
+        $res = $this->model->registrarAbonoComprasSeguro($monto, $fecha, $idCreditoCompra, $this->id_usuario);
+        if ($res) {
+            echo json_encode(['msg' => 'PAGO REGISTRADO', 'type' => 'success']);
+        } else {
+            echo json_encode(['msg' => 'ERROR AL REGISTRAR', 'type' => 'error']);
         }
         die();
     }

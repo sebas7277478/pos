@@ -71,6 +71,7 @@ class Ventas extends Controller
         }
 
         $verifcarCaja = $this->model->getCaja($this->id_usuario);
+
         if (empty($verifcarCaja['monto_inicial'])) {
             echo json_encode(['msg' => 'LA CAJA ESTÁ CERRADA', 'type' => 'warning']);
             return;

@@ -7,14 +7,24 @@ class CajasModel extends Query
     }
     public function abrirCaja($monto, $fecha_apertura, $id_usuario)
     {
-        $sql = "INSERT INTO cajas (monto_inicial, fecha_apertura, id_usuario) VALUES (?,?,?)";
-        $array = array($monto, $fecha_apertura, $id_usuario);
-        return $this->insertar($sql, $array);
+        try {
+            $this->con->beginTransaction();
+
+            $sql = "INSERT INTO cajas (monto_inicial, fecha_apertura, id_usuario) VALUES (?,?,?)";
+            $array = [$monto, $fecha_apertura, $id_usuario];
+            $result = $this->insertar($sql, $array);
+
+            $this->con->commit();
+            return $result;
+        } catch (Exception $e) {
+            $this->con->rollBack();
+            throw $e;
+        }
     }
     public function getCaja($id_usuario)
     {
-        $sql = "SELECT * FROM cajas WHERE estado = 1 AND id_usuario = $id_usuario";
-        return $this->select($sql);
+        $sql = "SELECT * FROM cajas WHERE estado = ? AND id_usuario = ?";
+        return $this->select($sql, [1, $id_usuario]);
     }
 
     public function getCajas()
@@ -25,9 +35,19 @@ class CajasModel extends Query
 
     public function registraGasto($monto, $descripcion, $destino, $id_usuario)
     {
-        $sql = "INSERT INTO gastos (monto, descripcion, foto, id_usuario) VALUES (?,?,?,?)";
-        $array = array($monto, $descripcion, $destino, $id_usuario);
-        return $this->insertar($sql, $array);
+        try {
+            $this->con->beginTransaction();
+
+            $sql = "INSERT INTO gastos (monto, descripcion, foto, id_usuario) VALUES (?,?,?,?)";
+            $array = [$monto, $descripcion, $destino, $id_usuario];
+            $result = $this->insertar($sql, $array);
+
+            $this->con->commit();
+            return $result;
+        } catch (Exception $e) {
+            $this->con->rollBack();
+            throw $e;
+        }
     }
     public function getGastos()
     {
@@ -40,6 +60,7 @@ class CajasModel extends Query
         return $this->select($sql);
     }
     //####### movimientos
+
     public function getVentas($campo, $id_usuario)
     {
         $sql = "SELECT SUM($campo) AS total FROM ventas WHERE metodo = 'CONTADO' AND estado = 1 AND apertura = 1 AND id_usuario = $id_usuario";
@@ -80,15 +101,52 @@ class CajasModel extends Query
     //cerrar caja
     public function cerrarCaja($fecha_cierre, $montoFinal, $totalVentas, $egresos, $gastos, $id_usuario)
     {
-        $sql = "UPDATE cajas SET fecha_cierre=?, monto_final=?, total_ventas=?, egresos=?, gastos=?, estado=? WHERE estado = ? AND id_usuario = ?";
-        $array = array($fecha_cierre, $montoFinal, $totalVentas, $egresos, $gastos, 0, 1, $id_usuario);
-        return $this->save($sql, $array);
+        try {
+            $this->con->beginTransaction();
+
+            // Actualizar caja
+            $sql = "UPDATE cajas SET fecha_cierre=?, monto_final=?, total_ventas=?, egresos=?, gastos=?, estado=? 
+                    WHERE estado = ? AND id_usuario = ?";
+            $array = [$fecha_cierre, $montoFinal, $totalVentas, $egresos, $gastos, 0, 1, $id_usuario];
+            $this->save($sql, $array);
+
+            // Actualizar apertura en todas las tablas relacionadas
+            $this->actualizarApertura('compras', $id_usuario, false);
+            $this->actualizarApertura('gastos', $id_usuario, false);
+            $this->actualizarApertura('ventas', $id_usuario, false);
+            $this->actualizarApertura('abonos', $id_usuario, false);
+            $this->actualizarApertura('abonos_compras', $id_usuario, false);
+            $this->actualizarApertura('detalle_apartado', $id_usuario, false);
+
+            $this->con->commit();
+            return 1;
+        } catch (Exception $e) {
+            $this->con->rollBack();
+            return 0;
+        }
     }
-    public function actualizarApertura($table, $id_usuario)
+    public function actualizarApertura($table, $id_usuario, $useTransaction = true)
     {
-        $sql = "UPDATE $table SET apertura = ? WHERE id_usuario = ?";
-        $array = array(0, $id_usuario);
-        return $this->save($sql, $array);
+        try {
+            if ($useTransaction) {
+                $this->con->beginTransaction();
+            }
+
+            $sql = "UPDATE $table SET apertura = ? WHERE id_usuario = ?";
+            $array = [0, $id_usuario];
+            $result = $this->save($sql, $array);
+
+            if ($useTransaction) {
+                $this->con->commit();
+            }
+
+            return $result;
+        } catch (Exception $e) {
+            if ($useTransaction) {
+                $this->con->rollBack();
+            }
+            throw $e;
+        }
     }
 
     public function getHistorialCajas($idCaja)
